@@ -9,6 +9,130 @@ interface TicketsViewProps {
   tickets?: Ticket[]; // Optional for now to avoid breaking if not passed yet, but better required.
 }
 
+
+// --- Extracted Detail View for Reusability ---
+interface TicketDetailProps {
+  ticket: Ticket;
+  isLoading: boolean;
+  newComment: string;
+  onCommentChange: (value: string) => void;
+  onStatusChange: (ticketId: string, status: TicketStatus) => void;
+  onAddComment: (ticketId: string) => void;
+}
+
+const TicketDetailView = ({ ticket, isLoading, newComment, onCommentChange, onStatusChange, onAddComment }: TicketDetailProps) => (
+  <div className="flex flex-col lg:flex-row gap-8">
+    {/* Left: Description & Details */}
+    <div className="flex-1 space-y-6">
+
+      {/* Status Management Card */}
+      <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-100 dark:border-blue-800 flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <RefreshCw className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isLoading ? 'animate-spin' : ''}`} />
+          <div>
+            <p className="text-sm font-bold text-blue-900 dark:text-blue-300">Gestionar Estado</p>
+            <p className="text-xs text-blue-700 dark:text-blue-400">Actualizar el progreso del ticket</p>
+          </div>
+        </div>
+        <select
+          value={ticket.status}
+          onChange={(e) => onStatusChange(ticket.id, e.target.value as TicketStatus)}
+          disabled={isLoading}
+          className="bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 min-w-[160px] cursor-pointer disabled:opacity-50"
+        >
+          {Object.values(TicketStatus).map(status => (
+            <option key={status} value={status}>{status}</option>
+          ))}
+        </select>
+      </div>
+
+      <div>
+        <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
+          <MessageSquare className="w-4 h-4 text-gray-400" />
+          Descripción Detallada
+        </h4>
+        <div className="bg-white dark:bg-slate-800 rounded-lg p-4 text-sm text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 leading-relaxed shadow-sm">
+          {ticket.description}
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4 text-sm">
+        <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+          <span className="text-xs text-gray-500 dark:text-slate-500 uppercase font-semibold">Solicitante Completo</span>
+          <p className="mt-1 text-gray-900 dark:text-white flex items-center gap-2">
+            <User className="w-3 h-3 text-gray-400" /> {ticket.requester}
+          </p>
+        </div>
+        <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
+          <span className="text-xs text-gray-500 dark:text-slate-500 uppercase font-semibold">Última Actualización</span>
+          <p className="mt-1 text-gray-900 dark:text-white flex items-center gap-2">
+            <Clock className="w-3 h-3 text-gray-400" /> {ticket.updatedAt}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    {/* Right: History/Updates */}
+    <div className="flex-1 lg:max-w-md">
+      <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Historial de Actividad</h4>
+
+      <div className="space-y-4 relative">
+        {/* Timeline Line */}
+        <div className="absolute top-2 bottom-8 left-[11px] w-px bg-gray-200 dark:bg-slate-700"></div>
+
+        {ticket.updates && ticket.updates.length > 0 ? (
+          ticket.updates.map((update) => (
+            <div key={update.id} className="relative flex gap-3">
+              <div className={`relative z-10 shrink-0 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800 
+                  ${update.type === 'STATUS_CHANGE' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
+                <div className="w-1.5 h-1.5 rounded-full bg-current"></div>
+              </div>
+              <div className="flex-1">
+                <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm text-sm">
+                  <div className="flex justify-between items-start mb-1">
+                    <span className="font-semibold text-gray-900 dark:text-white">{update.author}</span>
+                    <span className="text-xs text-gray-500 dark:text-slate-500">{update.date}</span>
+                  </div>
+                  <p className="text-gray-600 dark:text-slate-300">{update.message}</p>
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-6 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-200 dark:border-slate-700">
+            <p className="text-sm text-gray-500 dark:text-slate-400">No hay actualizaciones recientes.</p>
+          </div>
+        )}
+
+        {/* Reply Input */}
+        <div className="relative flex gap-3 pt-2">
+          <div className="relative z-10 shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center border-2 border-white dark:border-slate-800">
+            <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
+          </div>
+          <div className="flex-1 flex gap-2">
+            <input
+              type="text"
+              value={newComment}
+              onChange={(e) => onCommentChange(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && onAddComment(ticket.id)}
+              placeholder="Añadir un comentario o respuesta..."
+              disabled={isLoading}
+              className="flex-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-gray-900 dark:text-white transition-colors disabled:opacity-50"
+            />
+            <button
+              onClick={() => onAddComment(ticket.id)}
+              disabled={!newComment.trim() || isLoading}
+              className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors flex items-center justify-center w-10"
+            >
+              {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+);
+
 export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewProps) => {
   const [tickets, setTickets] = useState<Ticket[]>(initialTickets || []);
 
@@ -276,6 +400,8 @@ export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewPro
 
   const ticketBeingDeleted = tickets.find(t => t.id === ticketToDelete);
 
+
+
   return (
     <div className="space-y-4 md:space-y-6 relative">
       {/* Global Feedback Alert */}
@@ -360,8 +486,76 @@ export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewPro
         </div>
       </div>
 
-      {/* Tickets List */}
-      <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
+      {/* --- Mobile: Cards Layout (Visible < sm) --- */}
+      <div className="block sm:hidden space-y-4">
+        {filteredTickets.map((ticket) => {
+          const isExpanded = expandedTicketId === ticket.id;
+          return (
+            <div key={ticket.id} className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-200 dark:border-slate-700 overflow-hidden">
+              <div
+                onClick={() => toggleTicket(ticket.id)}
+                className="p-4 flex items-start gap-3 cursor-pointer"
+              >
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-start mb-2">
+                    <span className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${getPriorityColor(ticket.priority)}`}>
+                      {ticket.priority}
+                    </span>
+                    <div className="flex items-center gap-1.5 text-xs font-medium text-gray-600 dark:text-slate-300">
+                      {getStatusIcon(ticket.status)}
+                      <span>{ticket.status}</span>
+                    </div>
+                  </div>
+
+                  <h3 className="font-bold text-gray-900 dark:text-white text-sm line-clamp-2 mb-1">{ticket.title}</h3>
+                  <p className="text-xs text-gray-500 dark:text-slate-400 mb-2">{ticket.moduleName} • {ticket.id}</p>
+
+                  {!isExpanded && (
+                    <p className="text-xs text-gray-600 dark:text-slate-300 line-clamp-2 bg-gray-50 dark:bg-slate-900/50 p-2 rounded">
+                      {ticket.description}
+                    </p>
+                  )}
+                </div>
+                <div className="shrink-0 flex flex-col items-center gap-2">
+                  {isExpanded ? <ChevronUp className="w-5 h-5 text-gray-400" /> : <ChevronDown className="w-5 h-5 text-gray-400" />}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setTicketToDelete(ticket.id);
+                      setFeedback(null);
+                    }}
+                    className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Expanded Content */}
+              {isExpanded && (
+                <div className="border-t border-gray-100 dark:border-slate-700 bg-gray-50 dark:bg-slate-900/30 p-4 animate-in slide-in-from-top-2">
+                  <TicketDetailView
+                    ticket={ticket}
+                    isLoading={isLoading}
+                    newComment={newComment}
+                    onStatusChange={handleStatusChange}
+                    onAddComment={handleAddComment}
+                    onCommentChange={setNewComment}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        })}
+        {filteredTickets.length === 0 && (
+          <div className="p-8 text-center bg-white dark:bg-slate-800 rounded-xl border border-dashed border-gray-200 dark:border-slate-700">
+            <p className="text-gray-500 text-sm">No se encontraron tickets.</p>
+          </div>
+        )}
+      </div>
+
+      {/* --- Desktop: Table Layout (Visible >= sm) --- */}
+      <div className="hidden sm:block bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 overflow-hidden transition-colors">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
             <thead className="bg-gray-50 dark:bg-slate-900/50">
@@ -441,117 +635,14 @@ export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewPro
                       <tr className="bg-gray-50 dark:bg-slate-900/40">
                         <td colSpan={7} className="px-6 py-6 border-b border-gray-200 dark:border-slate-700 shadow-inner">
                           <div className="animate-in fade-in slide-in-from-top-2 duration-300">
-                            <div className="flex flex-col lg:flex-row gap-8">
-
-                              {/* Left: Description & Details */}
-                              <div className="flex-1 space-y-6">
-
-                                {/* Status Management Card (New) */}
-                                <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-100 dark:border-blue-800 flex items-center justify-between gap-4">
-                                  <div className="flex items-center gap-2">
-                                    <RefreshCw className={`w-5 h-5 text-blue-600 dark:text-blue-400 ${isLoading ? 'animate-spin' : ''}`} />
-                                    <div>
-                                      <p className="text-sm font-bold text-blue-900 dark:text-blue-300">Gestionar Estado</p>
-                                      <p className="text-xs text-blue-700 dark:text-blue-400">Actualizar el progreso del ticket</p>
-                                    </div>
-                                  </div>
-                                  <select
-                                    value={ticket.status}
-                                    onChange={(e) => handleStatusChange(ticket.id, e.target.value as TicketStatus)}
-                                    disabled={isLoading}
-                                    className="bg-white dark:bg-slate-800 border border-blue-200 dark:border-blue-700 text-gray-900 dark:text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block p-2.5 min-w-[160px] cursor-pointer disabled:opacity-50"
-                                  >
-                                    {Object.values(TicketStatus).map(status => (
-                                      <option key={status} value={status}>{status}</option>
-                                    ))}
-                                  </select>
-                                </div>
-
-                                <div>
-                                  <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
-                                    <MessageSquare className="w-4 h-4 text-gray-400" />
-                                    Descripción Detallada
-                                  </h4>
-                                  <div className="bg-white dark:bg-slate-800 rounded-lg p-4 text-sm text-gray-700 dark:text-slate-300 border border-gray-200 dark:border-slate-700 leading-relaxed shadow-sm">
-                                    {ticket.description}
-                                  </div>
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4 text-sm">
-                                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
-                                    <span className="text-xs text-gray-500 dark:text-slate-500 uppercase font-semibold">Solicitante Completo</span>
-                                    <p className="mt-1 text-gray-900 dark:text-white flex items-center gap-2">
-                                      <User className="w-3 h-3 text-gray-400" /> {ticket.requester}
-                                    </p>
-                                  </div>
-                                  <div className="p-3 bg-white dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700">
-                                    <span className="text-xs text-gray-500 dark:text-slate-500 uppercase font-semibold">Última Actualización</span>
-                                    <p className="mt-1 text-gray-900 dark:text-white flex items-center gap-2">
-                                      <Clock className="w-3 h-3 text-gray-400" /> {ticket.updatedAt}
-                                    </p>
-                                  </div>
-                                </div>
-                              </div>
-
-                              {/* Right: History/Updates */}
-                              <div className="flex-1 lg:max-w-md">
-                                <h4 className="text-sm font-semibold text-gray-900 dark:text-white mb-4">Historial de Actividad</h4>
-
-                                <div className="space-y-4 relative">
-                                  {/* Timeline Line */}
-                                  <div className="absolute top-2 bottom-8 left-[11px] w-px bg-gray-200 dark:bg-slate-700"></div>
-
-                                  {ticket.updates && ticket.updates.length > 0 ? (
-                                    ticket.updates.map((update) => (
-                                      <div key={update.id} className="relative flex gap-3">
-                                        <div className={`relative z-10 shrink-0 w-6 h-6 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800 
-                                            ${update.type === 'STATUS_CHANGE' ? 'bg-amber-100 text-amber-600' : 'bg-blue-100 text-blue-600'}`}>
-                                          <div className="w-1.5 h-1.5 rounded-full bg-current"></div>
-                                        </div>
-                                        <div className="flex-1">
-                                          <div className="bg-white dark:bg-slate-800 p-3 rounded-lg border border-gray-200 dark:border-slate-700 shadow-sm text-sm">
-                                            <div className="flex justify-between items-start mb-1">
-                                              <span className="font-semibold text-gray-900 dark:text-white">{update.author}</span>
-                                              <span className="text-xs text-gray-500 dark:text-slate-500">{update.date}</span>
-                                            </div>
-                                            <p className="text-gray-600 dark:text-slate-300">{update.message}</p>
-                                          </div>
-                                        </div>
-                                      </div>
-                                    ))
-                                  ) : (
-                                    <div className="text-center py-6 bg-white dark:bg-slate-800 rounded-lg border border-dashed border-gray-200 dark:border-slate-700">
-                                      <p className="text-sm text-gray-500 dark:text-slate-400">No hay actualizaciones recientes.</p>
-                                    </div>
-                                  )}
-
-                                  {/* Reply Input */}
-                                  <div className="relative flex gap-3 pt-2">
-                                    <div className="relative z-10 shrink-0 w-6 h-6 rounded-full bg-gray-100 dark:bg-slate-700 flex items-center justify-center border-2 border-white dark:border-slate-800">
-                                      <div className="w-1.5 h-1.5 rounded-full bg-gray-400"></div>
-                                    </div>
-                                    <div className="flex-1 flex gap-2">
-                                      <input
-                                        type="text"
-                                        value={newComment}
-                                        onChange={(e) => setNewComment(e.target.value)}
-                                        onKeyDown={(e) => e.key === 'Enter' && handleAddComment(ticket.id)}
-                                        placeholder="Añadir un comentario o respuesta..."
-                                        disabled={isLoading}
-                                        className="flex-1 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm focus:ring-2 focus:ring-emerald-500 outline-none text-gray-900 dark:text-white transition-colors disabled:opacity-50"
-                                      />
-                                      <button
-                                        onClick={() => handleAddComment(ticket.id)}
-                                        disabled={!newComment.trim() || isLoading}
-                                        className="bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 disabled:cursor-not-allowed text-white p-2 rounded-lg transition-colors flex items-center justify-center w-10"
-                                      >
-                                        {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-                                      </button>
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
+                            <TicketDetailView
+                              ticket={ticket}
+                              isLoading={isLoading}
+                              newComment={newComment}
+                              onStatusChange={handleStatusChange}
+                              onAddComment={handleAddComment}
+                              onCommentChange={setNewComment}
+                            />
                           </div>
                         </td>
                       </tr>
