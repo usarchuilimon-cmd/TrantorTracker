@@ -272,20 +272,53 @@ const TimelineManager = ({ timeline, setTimeline }: { timeline: TimelineEvent[],
     setEditForm({ ...evt });
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!editForm) return;
-    if (editingId === 'NEW') {
-      setTimeline([...timeline, { ...editForm, id: `t-${Date.now()}` }]);
-    } else {
-      setTimeline(timeline.map(t => t.id === editingId ? editForm : t));
+
+    try {
+      const isNew = editingId === 'NEW';
+      const eventId = isNew ? crypto.randomUUID() : editingId!;
+      
+      const { error } = await supabase
+        .from('tracker_timeline_events')
+        .upsert({
+          id: eventId,
+          phase: editForm.phase,
+          date_range: editForm.date, // Map UI 'date' to DB 'date_range'
+          status: editForm.status,
+          description: editForm.description,
+          modules_included: editForm.modulesIncluded || [] // Map UI 'modulesIncluded' to DB 'modules_included'
+        });
+
+      if (error) throw error;
+
+      const updatedEvent = { ...editForm, id: eventId };
+      
+      if (isNew) {
+        setTimeline([...timeline, updatedEvent]);
+      } else {
+        setTimeline(timeline.map(t => t.id === editingId ? updatedEvent : t));
+      }
+      
+      setEditingId(null);
+      setEditForm(null);
+      alert('Fase guardada correctamente');
+    } catch (error: any) {
+      console.error('Error saving timeline event:', error);
+      alert('Error al guardar fase: ' + error.message);
     }
-    setEditingId(null);
-    setEditForm(null);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('¿Eliminar fase del cronograma?')) {
-      setTimeline(timeline.filter(t => t.id !== id));
+      try {
+        const { error } = await supabase.from('tracker_timeline_events').delete().eq('id', id);
+        if (error) throw error;
+        setTimeline(timeline.filter(t => t.id !== id));
+      } catch (error: any) {
+        console.error('Error deleting timeline event:', error);
+        alert('Error al eliminar fase: ' + error.message);
+      }
     }
   };
 
@@ -362,14 +395,47 @@ const UsersManager = ({ users, setUsers }: { users: User[], setUsers: (u: User[]
   const [isAdding, setIsAdding] = useState(false);
   const [newUser, setNewUser] = useState<User>({ id: '', name: '', email: '', role: 'USER', department: Department.GENERAL });
 
-  const handleAddUser = () => {
-    setUsers([...users, { ...newUser, id: `usr-${Date.now()}` }]);
-    setIsAdding(false);
-    setNewUser({ id: '', name: '', email: '', role: 'USER', department: Department.GENERAL });
+  const handleAddUser = async () => {
+    try {
+      if (!newUser.name || !newUser.email) {
+        alert('Por favor complete nombre y correo');
+        return;
+      }
+      
+      const userId = crypto.randomUUID();
+      const userToSave = {
+        id: userId,
+        name: newUser.name,
+        email: newUser.email,
+        department: newUser.department,
+        role: newUser.role || 'USER' // Ensure role is set
+      };
+
+      const { error } = await supabase.from('tracker_users').insert(userToSave);
+      
+      if (error) throw error;
+
+      setUsers([...users, userToSave]);
+      setIsAdding(false);
+      setNewUser({ id: '', name: '', email: '', role: 'USER', department: Department.GENERAL });
+      alert('Usuario registrado correctamente');
+    } catch (error: any) {
+      console.error('Error adding user:', error);
+      alert('Error al registrar usuario: ' + error.message);
+    }
   };
 
-  const handleDeleteUser = (id: string) => {
-    setUsers(users.filter(u => u.id !== id));
+  const handleDeleteUser = async (id: string) => {
+    if(!confirm('¿Seguro que desea eliminar este usuario?')) return;
+    
+    try {
+      const { error } = await supabase.from('tracker_users').delete().eq('id', id);
+      if (error) throw error;
+      setUsers(users.filter(u => u.id !== id));
+    } catch (error: any) {
+      console.error('Error deleting user:', error);
+      alert('Error al eliminar usuario: ' + error.message);
+    }
   };
 
   return (
