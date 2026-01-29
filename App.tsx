@@ -73,11 +73,15 @@ function App() {
   // No need for local session listeners, handled in AuthContext
 
   // Redirect Super Admin to BackOffice
+  // Redirect Admins to BackOffice, Clients to Dashboard
   useEffect(() => {
-    if (user && profile?.role === 'SUPER_ADMIN' && activeTab === Tab.DASHBOARD) {
+    if (!profile) return;
+
+    if ((profile.role === 'SUPER_ADMIN' || profile.role === 'ORG_ADMIN') && activeTab === Tab.DASHBOARD) {
       setActiveTab(Tab.BACKOFFICE);
     }
-  }, [user?.id, profile?.role, activeTab]);
+    // Clients default to DASHBOARD which is the initial state, so no action needed.
+  }, [profile, activeTab]);
 
   // Update Company Name from Organization Context
   useEffect(() => {
@@ -366,8 +370,8 @@ function App() {
           <div className={`bg-gray-50 dark:bg-slate-900 rounded-xl p-3 transition-all ${isCollapsed ? 'flex justify-center' : ''}`}>
             {!isCollapsed ? (
               <>
-                <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">Cliente</p>
-                <p className="text-sm font-semibold truncate text-gray-900 dark:text-slate-200">{organization?.name || 'Mi Organización'}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">Proyecto</p>
+                <p className="text-sm font-semibold truncate text-gray-900 dark:text-slate-200">{organization?.name || 'Mi Proyecto'}</p>
                 <button
                   onClick={() => signOut()}
                   className="mt-3 flex items-center space-x-2 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
@@ -444,7 +448,7 @@ function App() {
                 {activeTab === Tab.TIMELINE && 'Línea de Tiempo'}
                 {activeTab === Tab.TICKETS && 'Soporte Técnico'}
                 {activeTab === Tab.FAQ && 'Centro de Ayuda'}
-                {activeTab === Tab.BACKOFFICE && 'Administración'}
+                {activeTab === Tab.BACKOFFICE && 'LAIMU - Control de Proyectos'}
               </h2>
               <p className="text-xs text-gray-500 dark:text-slate-400 mt-1 hidden sm:block">Seguimiento en tiempo real</p>
             </div>

@@ -46,11 +46,11 @@ const ConfigSection = ({ activeOrgId, currentName, onUpdate }: { activeOrgId: st
   return (
     <div className="max-w-2xl bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-100 dark:border-slate-700">
       <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-        <Building className="w-5 h-5" /> Datos de la Organización
+        <Building className="w-5 h-5" /> Datos del Proyecto
       </h3>
       <div className="space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nombre del Cliente / Empresa</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nombre del Proyecto / Empresa</label>
           <div className="flex gap-2">
             <input
               type="text"
@@ -69,7 +69,7 @@ const ConfigSection = ({ activeOrgId, currentName, onUpdate }: { activeOrgId: st
         </div>
         <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-700 dark:text-blue-300 flex gap-3">
           <AlertTriangle className="w-5 h-5 shrink-0" />
-          <p>Este cambio actualizará el nombre de la organización en toda la plataforma.</p>
+          <p>Este cambio actualizará el nombre del proyecto en toda la plataforma.</p>
         </div>
       </div>
     </div>
@@ -107,7 +107,7 @@ const OrganizationManager = ({ onSelect }: { onSelect: (org: { id: string, name:
 
   const handleDeleteOrg = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent selection when deleting
-    if (!confirm('Eliminar organización? Esto eliminará todos los datos asociados.')) return;
+    if (!confirm('Eliminar proyecto? Esto eliminará todos los datos asociados.')) return;
     const { error } = await supabase.from('tracker_organizations').delete().eq('id', id);
     if (error) alert('Error: ' + error.message);
     else fetchOrgs();
@@ -118,13 +118,13 @@ const OrganizationManager = ({ onSelect }: { onSelect: (org: { id: string, name:
       <div className="flex gap-4">
         <input
           type="text"
-          placeholder="Nueva Organización..."
+          placeholder="Nuevo Proyecto..."
           value={newOrgName}
           onChange={e => setNewOrgName(e.target.value)}
           className="flex-1 p-3 border rounded-xl dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm"
         />
         <button onClick={handleAddOrg} className="bg-emerald-600 text-white px-6 py-2 rounded-xl hover:bg-emerald-700 shadow-sm font-medium">
-          Crear Org
+          Crear Proyecto
         </button>
       </div>
 
@@ -148,7 +148,7 @@ const OrganizationManager = ({ onSelect }: { onSelect: (org: { id: string, name:
             <button
               onClick={(e) => handleDeleteOrg(org.id, e)}
               className="text-gray-400 hover:text-red-500 p-2 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all"
-              title="Eliminar Organización"
+              title="Eliminar Proyecto"
             >
               <Trash2 className="w-5 h-5" />
             </button>
@@ -273,7 +273,6 @@ const ModulesManager = ({ modules, setModules, activeOrgId }: { modules: Module[
             setEditingId('NEW');
             setEditForm({
               id: '', name: '', description: '', status: Status.PENDING,
-              id: '', name: '', description: '', status: Status.PENDING,
               icon: 'Package', owner: Department.GENERAL, progress: 0, features: [],
               responsibles: '', // Init responsibles
               organizationId: activeOrgId
@@ -375,7 +374,7 @@ const ModulesManager = ({ modules, setModules, activeOrgId }: { modules: Module[
               </div>
             </div>
           ))}
-          {orgModules.length === 0 && <p className="text-gray-500 col-span-3 text-center py-10">No hay módulos asignados a esta organización.</p>}
+          {orgModules.length === 0 && <p className="text-gray-500 col-span-3 text-center py-10">No hay módulos asignados a este proyecto.</p>}
         </div>
       )}
     </div>
@@ -630,7 +629,7 @@ const UsersManager = ({ users, setUsers, activeOrgId }: { users: User[], setUser
       </div>
 
       {activeTab === 'USERS' && (
-        <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700">
+        <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 overflow-x-auto">
           <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
             <thead className="bg-gray-50 dark:bg-slate-900/50">
               <tr>
@@ -654,8 +653,8 @@ const UsersManager = ({ users, setUsers, activeOrgId }: { users: User[], setUser
                       onChange={(e) => handleUpdateUser(user, 'role', e.target.value)}
                       className="text-sm border rounded p-1 dark:bg-slate-700 dark:text-white"
                     >
-                      <option value="CLIENT_USER">Cliente</option>
-                      <option value="ORG_ADMIN">Admin Org</option>
+                      <option value="CLIENT_USER">Usuario</option>
+                      <option value="ORG_ADMIN">Admin Proyecto</option>
                       <option value="SUPER_ADMIN">Super Admin</option>
                     </select>
                   </td>
@@ -698,7 +697,7 @@ const UsersManager = ({ users, setUsers, activeOrgId }: { users: User[], setUser
                 className="w-full p-2 border rounded dark:bg-slate-700 dark:border-slate-600 dark:text-white"
               >
                 <option value="CLIENT_USER">Cliente</option>
-                <option value="ORG_ADMIN">Admin Org</option>
+                <option value="ORG_ADMIN">Admin Proyecto</option>
                 <option value="SUPER_ADMIN">Super Admin</option>
               </select>
             </div>
@@ -711,7 +710,7 @@ const UsersManager = ({ users, setUsers, activeOrgId }: { users: User[], setUser
             </button>
           </div>
 
-          <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700">
+          <div className="bg-white dark:bg-slate-800 rounded-xl overflow-hidden border border-gray-200 dark:border-slate-700 overflow-x-auto">
             <table className="min-w-full divide-y divide-gray-200 dark:divide-slate-700">
               <thead className="bg-gray-50 dark:bg-slate-900/50">
                 <tr>
@@ -967,9 +966,9 @@ export const BackOfficeView = ({
         <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg">
           <h2 className="text-2xl font-bold flex items-center gap-3">
             <Settings className="w-8 h-8 text-blue-400" />
-            Administración de Clientes
+            Administración de Proyectos
           </h2>
-          <p className="text-slate-400 mt-1">Selecciona una organización para gestionar sus recursos, usuarios y módulos.</p>
+          <p className="text-slate-400 mt-1">Selecciona un proyecto para gestionar sus recursos, usuarios y módulos.</p>
         </div>
         <OrganizationManager onSelect={(org) => setActiveOrg(org)} />
       </div>
@@ -984,7 +983,7 @@ export const BackOfficeView = ({
           <button
             onClick={() => setActiveOrg(null)}
             className="p-2 bg-slate-800 hover:bg-slate-700 rounded-lg transition-colors border border-slate-700"
-            title="Volver a lista de organizaciones"
+            title="Volver a lista de proyectos"
           >
             <div className="flex items-center gap-2 text-sm">
               <span>← Volver</span>
@@ -995,7 +994,7 @@ export const BackOfficeView = ({
               <Building className="w-6 h-6 text-emerald-400" />
               {activeOrg.name}
             </h2>
-            <p className="text-slate-400 text-sm">Panel de Gestión de Organización</p>
+            <p className="text-slate-400 text-sm">Panel de Gestión de Proyecto</p>
           </div>
         </div>
 
