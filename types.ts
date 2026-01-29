@@ -43,6 +43,7 @@ export interface User {
   role: 'ADMIN' | 'USER';
   department: Department;
   avatar?: string;
+  organizationId?: string;
 }
 
 export interface SubModule {
@@ -59,6 +60,8 @@ export interface Module {
   owner: string; // Changed from Department to string to allow multiple names
   progress: number;
   features: SubModule[];
+  organizationId?: string;
+  responsibles?: string;
 }
 
 export interface CustomDevelopment {
@@ -85,6 +88,7 @@ export interface TimelineEvent {
   description: string;
   modulesIncluded?: string[];
   tasks?: SprintTask[];
+  organizationId?: string;
 }
 
 export interface ActionItem {
@@ -129,6 +133,7 @@ export interface Ticket {
   createdAt: string;
   updatedAt: string;
   requester: string;
+  organizationId?: string;
   updates?: TicketUpdate[];
 }
 
@@ -137,6 +142,7 @@ export interface FaqItem {
   question: string;
   answer: string;
   category: string;
+  organizationId?: string;
 }
 
 export interface TutorialItem {
@@ -145,4 +151,14 @@ export interface TutorialItem {
   duration: string;
   type: 'VIDEO' | 'DOC';
   thumbnailColor: string;
+  organizationId?: string;
+}
+
+export interface Invitation {
+  id: string;
+  email: string;
+  organizationId: string;
+  role: 'CLIENT_USER' | 'ORG_ADMIN' | 'SUPER_ADMIN';
+  status: 'PENDING' | 'ACCEPTED';
+  createdAt: string;
 }

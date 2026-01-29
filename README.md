@@ -1,36 +1,54 @@
-# Trantor Tracker
+# Trantor Tracker SaaS
 
-**Trantor Tracker** es una plataforma integral de gestión y seguimiento de proyectos diseñada para facilitar la administración de módulos ERP, cronogramas de implementación, desarrollos a medida y soporte técnico.
+**Trantor Tracker** es una plataforma SaaS B2B diseñada para la gestión integral de proyectos de consultoría de sistemas. Permite la administración multi-tenant de clientes, módulos ERP, cronogramas de implementación y soporte técnico, garantizando el aislamiento de datos y una experiencia personalizada por organización.
 
-Esta aplicación ofrece una interfaz moderna y centralizada para visualizar el progreso, gestionar usuarios y coordinar acciones críticas dentro de la organización (Grupo Omega).
+## 🚀 Arquitectura SaaS & Multi-tenancy
 
-## 🚀 Características Principales
+Esta aplicación ha sido transformada de un tracker simple a una solución multi-organizacional robusta:
 
--   **Dashboard Ejecutivo**: Visualización de KPIs, estado general de módulos y próximas entregas.
--   **Gestión de Módulos ERP**: Catálogo detallado de módulos con seguimiento de progreso y funcionalidades específicas.
--   **Cronograma (Timeline)**: Planificación de sprints y fases del proyecto con fechas y estados.
--   **Desarrollos a Medida**: Seguimiento de solicitudes de personalización por departamento.
--   **Gestión de Acciones**: Lista de tareas pendientes y críticas asignadas a diferentes áreas.
--   **Soporte y Tickets**: Sistema para levantar y dar seguimiento a incidencias técnicas.
--   **Centro de Ayuda (Recursos)**: FAQs y tutoriales para capacitación de usuarios.
--   **BackOffice Administrativo**: Panel de control para gestionar la configuración global, usuarios, y persistencia de datos (Sprints, Módulos, etc.).
+-   **Multi-tenancy Real**: Aislamiento estricto de datos por `organization_id` reforzado por Row Level Security (RLS) en PostgreSQL.
+-   **Roles de Usuario**:
+    -   `SUPER_ADMIN`: Gestión global de todos los tenants, configuración del sistema y aprovisionamiento.
+    -   `ORG_ADMIN`: Gestión interna de una organización específica (planificación futura).
+    -   `CLIENT_USER`: Acceso de lectura a su proyecto y escritura para Tickets de Soporte.
+-   **Flujos Diferenciados**:
+    -   **BackOffice (Admin)**: Panel completo para crear clientes, asignar módulos, definir cronogramas y gestionar usuarios.
+    -   **Portal Cliente**: Vista simplificada y brandeada para que el cliente consulte su avance y solicite ayuda.
+
+## 🌟 Características Principales
+
+### Para el Administrador (BackOffice)
+-   **Gestión de Organizaciones**: Creación y configuración de nuevos clientes (Tenants).
+-   **Gestión de Usuarios**: Invitación y asignación de usuarios a organizaciones específicas.
+-   **Configuración de Proyecto**:
+    -   Alta de Módulos y Funcionalidades por cliente.
+    -   Creación de Sprints y Fases en el Cronograma.
+    -   Asignación de "Responsables" y recursos.
+
+### Para el Cliente
+-   **Dashboard Personalizado**: Vista resumen filtrada exclusivamente para su organización.
+-   **Seguimiento en Tiempo Real**: Visualización de avance de módulos y cumplimiento de fechas.
+-   **Sistema de Tickets**: Levantamiento de incidencias vinculado a su contexto organizacional.
+-   **Recursos**: Acceso a tutoriales y FAQs específicos o globales.
 
 ## 🛠️ Stack Tecnológico
 
 -   **Frontend**: [React 19](https://react.dev/) + [Vite](https://vitejs.dev/)
 -   **Lenguaje**: TypeScript
--   **Estilos**: Tailwind CSS (Clases utilitarias)
+-   **Estilos**: Tailwind CSS (Diseño responsivo y Modo Oscuro)
 -   **Iconos**: [Lucide React](https://lucide.dev/)
--   **Gráficos**: [Recharts](https://recharts.org/)
--   **Backend / Base de Datos**: [Supabase](https://supabase.com/) (PostgreSQL + Auth)
+-   **Backend & Auth**: [Supabase](https://supabase.com/)
+    -   PostgreSQL
+    -   Authentication (Email/Password)
+    -   Row Level Security (RLS) policies
 
-## 📦 Instalación y Configuración
+## 📦 Instalación y Configuración Local
 
 ### Prerrequisitos
--   Node.js (v18 o superior recomendado)
--   Cuenta de Supabase configurada
+-   Node.js (v18+)
+-   Cuenta de Supabase (Proyecto creado)
 
-### Pasos para iniciar
+### Pasos
 
 1.  **Clonar el repositorio**:
     ```bash
@@ -43,38 +61,32 @@ Esta aplicación ofrece una interfaz moderna y centralizada para visualizar el p
     npm install
     ```
 
-3.  **Configurar variables de entorno**:
-    Crea un archivo `.env.local` en la raíz del proyecto y agrega tus credenciales de Supabase:
+3.  **Configurar Variables de Entorno**:
+    Crea un archivo `.env.local` en la raíz:
     ```env
-    VITE_SUPABASE_URL=tu_url_de_supabase
-    VITE_SUPABASE_ANON_KEY=tu_anon_key_de_supabase
+    VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
+    VITE_SUPABASE_ANON_KEY=tu-anon-key-publica
     ```
 
-4.  **Ejecutar en desarrollo**:
+4.  **Configurar Base de Datos (Supabase)**:
+    -   Ejecutar las migraciones SQL ubicadas en `/supabase/migrations` para crear las tablas (`tracker_organizations`, `tracker_profiles`, etc.) y las políticas RLS.
+
+5.  **Ejecutar en desarrollo**:
     ```bash
     npm run dev
     ```
-    La aplicación estará disponible típicamente en `http://localhost:5173`.
 
-5.  **Construir para producción**:
-    ```bash
-    npm run build
-    ```
+## 🗄️ Modelo de Datos (Core)
 
-## 🗄️ Estructura de Base de Datos (Supabase)
+-   `tracker_organizations`: Entidad raíz (Tenants).
+-   `tracker_profiles`: Extension de perfil de usuario ligada a `auth.users` y `tracker_organizations`.
+-   `tracker_modules`: Módulos del ERP (Tenant-scoped).
+-   `tracker_timeline_events`: Sprints y Fases (Tenant-scoped).
+-   `tracker_tickets`: Incidencias de soporte (Tenant-scoped).
 
-El proyecto utiliza las siguientes tablas principales:
--   `tracker_modules`: Módulos del sistema ERP.
--   `tracker_module_features`: Sub-funcionalidades de cada módulo.
--   `tracker_timeline_events`: Fases o Sprints del cronograma.
--   `tracker_users`: Usuarios con acceso al sistema (Roles: ADMIN, USER).
--   `tracker_tickets`: Tickets de soporte.
--   `tracker_faqs` & `tracker_tutorials`: Recursos de ayuda.
+## 🔒 Seguridad
 
-## 🤝 Contribución
+El sistema implementa un modelo de seguridad "Zero Trust" a nivel de base de datos. Incluso si el frontend fuera comprometido, las políticas RLS impiden que un usuario de la Organización A acceda a los datos de la Organización B.
 
-1.  Hacer un Fork del proyecto.
-2.  Crear una rama para tu funcionalidad (`git checkout -b feature/AmazingFeature`).
-3.  Hacer Commit de tus cambios (`git commit -m 'Add some AmazingFeature'`).
-4.  Hacer Push a la rama (`git push origin feature/AmazingFeature`).
-5.  Abrir un Pull Request.
+---
+Desarrollado por **Antigravity** para **Trantor Tracker**.

@@ -42,6 +42,7 @@ import { supabase } from './lib/supabase';
 import { mapModule, mapTimelineEvent, mapCustomDev, mapActionItem, mapFaq, mapTutorial, mapUser, mapTicket } from './lib/mappers';
 import { Session } from '@supabase/supabase-js';
 import { Login } from './components/Login';
+import { useAuth } from './contexts/AuthContext';
 
 function App() {
   const [activeTab, setActiveTab] = useState<Tab>(Tab.DASHBOARD);
@@ -60,31 +61,34 @@ function App() {
   const [tutorials, setTutorials] = useState<TutorialItem[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]); // Added tickets state
+  const [selectedModule, setSelectedModule] = useState<Module | null>(null); // State to control module detail view
   const [isLoading, setIsLoading] = useState(true);
 
   // Auth State
-  const [session, setSession] = useState<Session | null>(null);
+  // Auth State from Context
+  const { user, profile, organization, loading, signOut, isAdmin, isClient } = useAuth();
+
 
   // Auth & Data Fetching
+  // No need for local session listeners, handled in AuthContext
+
+  // Redirect Super Admin to BackOffice
   useEffect(() => {
-    // 1. Check active session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-    });
+    if (user && profile?.role === 'SUPER_ADMIN' && activeTab === Tab.DASHBOARD) {
+      setActiveTab(Tab.BACKOFFICE);
+    }
+  }, [user?.id, profile?.role, activeTab]);
 
-    // 2. Listen for changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-    });
-
-    return () => subscription.unsubscribe();
-  }, []);
+  // Update Company Name from Organization Context
+  useEffect(() => {
+    if (organization?.name) {
+      setCompanyName(organization.name);
+    }
+  }, [organization?.name]);
 
   // Fetch Logic (Moved to be dependent on session or just called if session exists)
   useEffect(() => {
-    if (!session) return; // Only fetch if logged in
+    if (!user) return; // Only fetch if logged in
 
 
     async function fetchData() {
@@ -98,16 +102,14 @@ function App() {
           .select('*, tracker_module_features(*)')
           .order('id');
         if (modulesError) throw modulesError;
-        console.log('Modules Data:', modulesData);
         if (modulesData) setModules(modulesData.map((m: any) => mapModule(m)));
 
         // Fetch Timeline with Tasks
         const { data: timelineData, error: timelineError } = await supabase
           .from('tracker_timeline_events')
           .select('*, tracker_timeline_tasks(*)')
-          .order('id');
+          .order('created_at', { ascending: true });
         if (timelineError) throw timelineError;
-        console.log('Timeline Data:', timelineData);
         if (timelineData) setTimeline(timelineData.map((t: any) => mapTimelineEvent(t)));
 
         // Fetch Custom Devs
@@ -146,36 +148,35 @@ function App() {
         if (ticketsError) throw ticketsError;
         if (ticketsData) setTickets(ticketsData.map((t: any) => mapTicket(t)));
 
-        // Fetch Users
-        const { data: usersData, error: usersError } = await supabase
-          .from('tracker_users')
+        // Fetch Profiles (Users)
+        // Only if Admin? Or everyone needs to see users? Maybe for assignments.
+        // For now fetch all profiles visible to user (RLS controls this)
+        const { data: profilesData, error: profilesError } = await supabase
+          .from('tracker_profiles')
           .select('*');
-        if (usersError) throw usersError;
-        if (usersData && usersData.length > 0) {
-          setUsers(usersData.map(mapUser));
-        } else {
-          setUsers([
-            { id: 'u1', name: 'Jessica Rocha', email: 'jessica.rocha@omega.com', role: 'USER', department: Department.PURCHASING },
-            { id: 'u2', name: 'Carolina Martínez', email: 'carolina.martinez@omega.com', role: 'USER', department: Department.WAREHOUSE },
-            { id: 'u3', name: 'Jesus Romero', email: 'jesus.romero@omega.com', role: 'USER', department: Department.PRODUCTION },
-            { id: 'u4', name: 'Emilio Mendoza', email: 'emilio.mendoza@omega.com', role: 'ADMIN', department: Department.IT },
-            { id: 'u5', name: 'Abigail Cuevas', email: 'abigail.cuevas@omega.com', role: 'USER', department: Department.QUALITY },
-            { id: 'u6', name: 'Kavit García', email: 'kavit.garcia@omega.com', role: 'USER', department: Department.HR },
-            { id: 'u7', name: 'Lupita Delgadillo', email: 'lupita.delgadillo@omega.com', role: 'USER', department: Department.FINANCE },
-            { id: 'u8', name: 'Brisia Mendoza', email: 'brisia.mendoza@omega.com', role: 'ADMIN', department: Department.IT }
-          ]);
-        }
+        if (profilesError) throw profilesError;
 
+        // Map profiles to User
+        if (profilesData) {
+          const mappedUsers: User[] = profilesData.map((p: any) => ({
+            id: p.id,
+            name: p.full_name || 'Unknown',
+            email: 'user@example.com', // Profile doesn't have email usually, unless we replicate it. 
+            // We might need to fetch email from auth or just use placeholder.
+            // For MVP display, name is enough.
+            role: p.role === 'CLIENT_USER' ? 'USER' : 'ADMIN',
+            department: Department.IT, // Default or add department to profile
+            organizationId: p.organization_id
+          }));
+          setUsers(mappedUsers);
+        }
 
       } catch (error: any) {
         console.error('Error fetching data:', error);
 
-        // Build robust error handling for session expiry
-        // Supabase might return different error structures, checking for status or message
         if (error.status === 401 || error.status === 403 || (error.message && error.message.includes('JWT'))) {
-          console.warn('Session appeared invalid during fetch. Forcing logout.');
-          await supabase.auth.signOut();
-          setSession(null); // Force UI update immediately
+          console.warn('Session invalid.');
+          // signOut(); // Removed signOut() from here as per instruction, assuming it's handled by AuthContext or elsewhere.
         }
 
       } finally {
@@ -184,7 +185,7 @@ function App() {
     }
 
     fetchData();
-  }, [session]); // Re-run when session changes (e.g. login)
+  }, [user?.id]); // Only refetch if USER ID changes (not just the session object)
 
   // Fullscreen Logic
   const toggleFullscreen = () => {
@@ -246,17 +247,31 @@ function App() {
   };
 
   // If no session, show Login
-  if (!session) {
-    return <Login />;
-  }
-
-  // Loading State
-  if (isLoading) {
+  // If no user and not loading (loading handled by AuthContext mostly but we check user), show Login
+  // Actually, AuthContext loading covers initial fetch.
+  if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 text-emerald-600">
         <div className="flex flex-col items-center gap-2">
           <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-sm font-medium text-gray-500 dark:text-slate-400">Cargando...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Login />;
+  }
+
+  // Loading State
+  // Loading State from data fetch
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 text-emerald-600">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-sm font-medium text-gray-500 dark:text-slate-400">Cargando datos...</p>
         </div>
       </div>
     );
@@ -323,21 +338,28 @@ function App() {
           </button>
         </div>
 
-        <nav className={`flex-1 p-3 space-y-2 mt-2 ${isCollapsed ? 'overflow-visible' : 'overflow-y-auto custom-scrollbar'}`}>
-          <NavItem tab={Tab.DASHBOARD} label="Resumen General" icon={LayoutDashboard} />
-          <NavItem tab={Tab.MODULES} label="Módulos ERP" icon={Grid} />
-          <NavItem tab={Tab.TIMELINE} label="Cronograma" icon={CalendarDays} />
-          <NavItem tab={Tab.CUSTOM_DEVS} label="Desarrollos" icon={Code2} />
-          <NavItem tab={Tab.ACTIONS} label="Acciones" icon={ListTodo} />
-          <div className="pt-4 mt-4 border-t border-gray-200 dark:border-slate-800">
-            <NavItem tab={Tab.FAQ} label="Ayuda & Tutoriales" icon={BookOpen} />
-            <NavItem tab={Tab.TICKETS} label="Soporte & Tickets" icon={LifeBuoy} />
-          </div>
+        <nav className="flex-1 px-3 py-4 space-y-2 overflow-y-auto custom-scrollbar">
+          {profile?.role !== 'SUPER_ADMIN' && (
+            <>
+              <NavItem tab={Tab.DASHBOARD} label="Resumen General" icon={LayoutDashboard} />
+              <NavItem tab={Tab.MODULES} label="Módulos ERP" icon={Grid} />
+              <NavItem tab={Tab.TIMELINE} label="Cronograma" icon={CalendarDays} />
+              <NavItem tab={Tab.CUSTOM_DEVS} label="Desarrollos" icon={Code2} />
+              <NavItem tab={Tab.ACTIONS} label="Acciones" icon={ListTodo} />
+              <NavItem tab={Tab.FAQ} label="Ayuda & Tutoriales" icon={BookOpen} />
+              <NavItem tab={Tab.TICKETS} label="Soporte & Tickets" icon={LifeBuoy} />
+            </>
+          )}
 
-          {/* BackOffice Link */}
-          <div className="mt-8 pt-4 border-t border-gray-200 dark:border-slate-800/50">
-            <NavItem tab={Tab.BACKOFFICE} label="Admin BackOffice" icon={Settings} />
-          </div>
+          {/* Admin Section */}
+          {isAdmin && (
+            <>
+              <div className={`mt-6 mb-2 px-4 text-xs font-semibold text-gray-400 uppercase tracking-wider ${isCollapsed ? 'hidden' : 'block'}`}>
+                Administración
+              </div>
+              <NavItem tab={Tab.BACKOFFICE} label="Admin BackOffice" icon={Settings} />
+            </>
+          )}
         </nav>
 
         <div className="p-3 border-t border-gray-200 dark:border-slate-800">
@@ -345,9 +367,9 @@ function App() {
             {!isCollapsed ? (
               <>
                 <p className="text-xs text-gray-500 dark:text-slate-400 mb-1">Cliente</p>
-                <p className="text-sm font-semibold truncate text-gray-900 dark:text-slate-200">{companyName}</p>
+                <p className="text-sm font-semibold truncate text-gray-900 dark:text-slate-200">{organization?.name || 'Mi Organización'}</p>
                 <button
-                  onClick={() => supabase.auth.signOut()}
+                  onClick={() => signOut()}
                   className="mt-3 flex items-center space-x-2 text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 transition-colors"
                 >
                   <LogOut className="w-3 h-3" />
@@ -356,7 +378,7 @@ function App() {
               </>
             ) : (
               <button
-                onClick={() => supabase.auth.signOut()}
+                onClick={() => signOut()}
                 className="text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300"
                 title="Cerrar Sesión"
               >
@@ -395,7 +417,7 @@ function App() {
             <NavItem tab={Tab.FAQ} label="Ayuda & Tutoriales" icon={BookOpen} />
             <NavItem tab={Tab.TICKETS} label="Soporte & Tickets" icon={LifeBuoy} />
           </div>
-          <NavItem tab={Tab.BACKOFFICE} label="Admin BackOffice" icon={Settings} />
+          {isAdmin && <NavItem tab={Tab.BACKOFFICE} label="Admin BackOffice" icon={Settings} />}
         </nav>
       </div>
 
@@ -453,10 +475,11 @@ function App() {
 
             <div className="flex items-center space-x-3 pl-1 sm:pl-2">
               <div className="text-right hidden sm:block">
-                <p className="text-sm font-medium text-gray-900 dark:text-white">Admin</p>
+                <p className="text-sm font-medium text-gray-900 dark:text-white">{profile?.full_name || user?.email}</p>
+                <p className="text-xs text-gray-500 dark:text-slate-400">{profile?.role || 'User'}</p>
               </div>
               <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md ring-2 ring-white dark:ring-slate-700">
-                JD
+                {(profile?.full_name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
               </div>
             </div>
           </div>
@@ -464,14 +487,14 @@ function App() {
 
         {/* Dynamic View Content */}
         <div className="p-4 sm:p-6 md:p-8 w-full max-w-[1600px] mx-auto">
-          {activeTab === Tab.DASHBOARD && <DashboardView modules={modules} timeline={timeline} actions={actions} onNavigate={setActiveTab} />}
-          {activeTab === Tab.MODULES && <ModulesView modules={modules} />}
+          {activeTab === Tab.DASHBOARD && <DashboardView modules={modules} timeline={timeline} actions={actions} onNavigate={setActiveTab} onModuleSelect={setSelectedModule} />}
+          {activeTab === Tab.MODULES && <ModulesView modules={modules} activeModule={selectedModule} onSelectModule={setSelectedModule} />}
           {activeTab === Tab.CUSTOM_DEVS && <CustomDevsView customDevs={customDevs} />}
           {activeTab === Tab.ACTIONS && <ActionsView actions={actions} onToggle={handleToggleAction} onAdd={handleAddAction} onDelete={handleDeleteAction} />}
           {activeTab === Tab.TIMELINE && <TimelineView timeline={timeline} />}
-          {activeTab === Tab.TICKETS && <TicketsView modules={modules} tickets={tickets} />}
+          {activeTab === Tab.TICKETS && <TicketsView modules={modules} tickets={tickets} setTickets={setTickets} />}
           {activeTab === Tab.FAQ && <FaqView faqs={faqs} tutorials={tutorials} />}
-          {activeTab === Tab.BACKOFFICE && (
+          {activeTab === Tab.BACKOFFICE && isAdmin && (
             <BackOfficeView
               companyName={companyName}
               setCompanyName={setCompanyName}

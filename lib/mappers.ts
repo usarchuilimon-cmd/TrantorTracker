@@ -22,9 +22,11 @@ export const mapModule = (row: DBModule): Module => ({
     icon: row.icon || 'Package',
     owner: row.owner || '',
     progress: row.progress || 0,
+    responsibles: row.responsibles || undefined,
+    organizationId: row.organization_id, // Support tenant scoping
     features: (row.tracker_module_features || []).map((f) => ({
         name: f.name,
-        status: f.status as Status,
+        status: (f.status as Status) || Status.PENDING,
     })),
 });
 
@@ -50,6 +52,7 @@ export const mapTimelineEvent = (row: DBTimeline): TimelineEvent => ({
         status: t.status as Status,
         week: t.week || undefined,
     })),
+    organizationId: row.organization_id // Support tenant scoping
 });
 
 export const mapActionItem = (row: Database['public']['Tables']['tracker_action_items']['Row']): ActionItem => ({
@@ -96,11 +99,11 @@ export const mapTutorial = (row: Database['public']['Tables']['tracker_tutorials
     thumbnailColor: row.thumbnail_color || 'bg-gray-500',
 });
 
-export const mapUser = (row: Database['public']['Tables']['tracker_users']['Row']): User => ({
+export const mapUser = (row: Database['public']['Tables']['tracker_profiles']['Row']): User => ({
     id: row.id,
-    name: row.name,
-    email: row.email,
-    role: row.role as 'ADMIN' | 'USER',
-    department: row.department as Department,
-    avatar: row.avatar || undefined
+    name: row.full_name || 'Unknown',
+    email: 'user@example.com', // Profile doesn't store email, managed by Auth
+    role: (row.role === 'SUPER_ADMIN' || row.role === 'ORG_ADMIN') ? 'ADMIN' : 'USER',
+    department: Department.GENERAL, // Default as not in profile
+    organizationId: row.organization_id || undefined,
 });

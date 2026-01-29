@@ -1,16 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { SUPPORT_TICKETS } from '../constants';
 import { TicketPriority, TicketStatus, Ticket, Module, TicketUpdate } from '../types';
 import { LifeBuoy, Plus, Search, Filter, AlertCircle, CheckCircle, Clock, Circle, X, Save, ChevronDown, ChevronUp, User, MessageSquare, Send, Trash2, Loader2, AlertTriangle, RefreshCw } from 'lucide-react';
 
 interface TicketsViewProps {
   modules: Module[];
-  tickets?: Ticket[]; // Optional for now to avoid breaking if not passed yet, but better required.
+  tickets: Ticket[];
+  setTickets: (tickets: Ticket[]) => void;
 }
 
-
-// --- Extracted Detail View for Reusability ---
 interface TicketDetailProps {
   ticket: Ticket;
   isLoading: boolean;
@@ -133,13 +133,14 @@ const TicketDetailView = ({ ticket, isLoading, newComment, onCommentChange, onSt
   </div>
 );
 
-export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewProps) => {
-  const [tickets, setTickets] = useState<Ticket[]>(initialTickets || []);
+export const TicketsView = ({ modules, tickets, setTickets }: TicketsViewProps) => {
+  // We use the prop 'tickets' directly for the source of truth, 
+  // but we might need local state for filtering/UI only.
+  // Actually, let's use the tickets prop directly and update it via setTickets.
 
-  // Update local state when props change (sync)
-  useEffect(() => {
-    if (initialTickets) setTickets(initialTickets);
-  }, [initialTickets]);
+  // Get Auth Context
+  const { user, profile, organization, isAdmin } = useAuth();
+
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedModuleId, setSelectedModuleId] = useState<string>(''); // State for module filter
@@ -220,9 +221,13 @@ export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewPro
       if (!newTicket.moduleId) throw new Error("Debe seleccionar un módulo relacionado.");
       if (!newTicket.description.trim()) throw new Error("La descripción es obligatoria.");
 
-      // 2. Create in Supabase (No waiting)
+      if (!organization?.id) throw new Error("No se ha identificado su organización. Contacte a soporte.");
+
+      // 2. Create in Supabase
       const selectedModule = modules.find(m => m.id === newTicket.moduleId);
       const ticketId = `T-${Date.now()}`;
+
+      const requesterName = profile?.full_name || user?.email || 'Usuario';
 
       const { error } = await supabase
         .from('tracker_tickets')
@@ -230,11 +235,13 @@ export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewPro
           id: ticketId,
           title: newTicket.title,
           description: newTicket.description,
-          module_id: newTicket.moduleId,
+          module_id: selectedModule?.id || null, // Ensure ID is passed or null NOT just the string form value if it was mapped differently
           module_name: selectedModule ? selectedModule.name : 'General',
           priority: newTicket.priority,
           status: TicketStatus.OPEN,
-          requester: 'Admin (Usuario Actual)', // Hardcoded user
+          requester: requesterName,
+          organization_id: organization.id, // CRITICAL: Assign to Org
+          updated_at: new Date().toISOString()
         });
 
       if (error) throw error;
@@ -250,7 +257,8 @@ export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewPro
         status: TicketStatus.OPEN,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
-        requester: 'Admin (Usuario Actual)',
+        requester: requesterName,
+        organizationId: organization.id, // Local type update if needed
         updates: []
       };
 
@@ -327,20 +335,23 @@ export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewPro
       // Validation
       if (newComment.length > 500) throw new Error("El comentario es demasiado largo (máx 500 caracteres).");
 
+      const authorName = profile?.full_name || user?.email || 'Usuario';
+
       const { error } = await supabase
         .from('tracker_ticket_updates')
         .insert({
           ticket_id: ticketId,
-          author: 'Admin (Usuario Actual)',
+          author: authorName,
           message: newComment,
-          type: 'COMMENT'
+          type: 'COMMENT',
+          date: new Date().toLocaleString('es-MX') // Required by DB schema
         });
 
       if (error) throw error;
 
       const update: TicketUpdate = {
         id: `u-${Date.now()}`,
-        author: 'Admin (Usuario Actual)',
+        author: authorName,
         date: new Date().toLocaleString('es-MX'),
         message: newComment,
         type: 'COMMENT'
@@ -616,17 +627,19 @@ export const TicketsView = ({ modules, tickets: initialTickets }: TicketsViewPro
                         </div>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setTicketToDelete(ticket.id);
-                            setFeedback(null);
-                          }}
-                          className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
-                          title="Eliminar ticket"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
+                        {isAdmin && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setTicketToDelete(ticket.id);
+                              setFeedback(null);
+                            }}
+                            className="p-2 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-colors"
+                            title="Eliminar ticket"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </button>
+                        )}
                       </td>
                     </tr>
 
