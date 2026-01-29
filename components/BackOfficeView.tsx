@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import { Module, TimelineEvent, User, Department, Status, SubModule, FaqItem, TutorialItem } from '../types';
 import { Settings, Users, Grid, CalendarDays, Plus, Trash2, Edit2, Save, X, Building, Calendar, CheckCircle, AlertTriangle, BookOpen, HelpCircle, PlayCircle, FileText } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
@@ -78,7 +79,7 @@ const ConfigSection = ({ activeOrgId, currentName, onUpdate }: { activeOrgId: st
 
 // --- Sub-Component: Organizations Manager ---
 // --- Sub-Component: Organizations Manager (List View) ---
-const OrganizationManager = ({ onSelect }: { onSelect: (org: { id: string, name: string }) => void }) => {
+const OrganizationManager = ({ onSelect, role }: { onSelect: (org: { id: string, name: string }) => void, role: string }) => {
   const [orgs, setOrgs] = useState<{ id: string, name: string }[]>([]);
   const [loading, setLoading] = useState(false);
   const [newOrgName, setNewOrgName] = useState('');
@@ -115,18 +116,20 @@ const OrganizationManager = ({ onSelect }: { onSelect: (org: { id: string, name:
 
   return (
     <div className="space-y-6">
-      <div className="flex gap-4">
-        <input
-          type="text"
-          placeholder="Nuevo Proyecto..."
-          value={newOrgName}
-          onChange={e => setNewOrgName(e.target.value)}
-          className="flex-1 p-3 border rounded-xl dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm"
-        />
-        <button onClick={handleAddOrg} className="bg-emerald-600 text-white px-6 py-2 rounded-xl hover:bg-emerald-700 shadow-sm font-medium">
-          Crear Proyecto
-        </button>
-      </div>
+      {role === 'SUPER_ADMIN' && (
+        <div className="flex gap-4">
+          <input
+            type="text"
+            placeholder="Nuevo Proyecto..."
+            value={newOrgName}
+            onChange={e => setNewOrgName(e.target.value)}
+            className="flex-1 p-3 border rounded-xl dark:bg-slate-700 dark:border-slate-600 dark:text-white shadow-sm"
+          />
+          <button onClick={handleAddOrg} className="bg-emerald-600 text-white px-6 py-2 rounded-xl hover:bg-emerald-700 shadow-sm font-medium">
+            Crear Proyecto
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {orgs.map(org => (
@@ -956,6 +959,8 @@ export const BackOfficeView = ({
   faqs, setFaqs,
   tutorials, setTutorials
 }: BackOfficeViewProps) => {
+  const { profile } = useAuth();
+  const role = profile?.role || 'CLIENT_USER';
   const [activeTab, setActiveTab] = useState<AdminTab>('MODULES');
   const [activeOrg, setActiveOrg] = useState<{ id: string, name: string } | null>(null);
 
@@ -970,7 +975,7 @@ export const BackOfficeView = ({
           </h2>
           <p className="text-slate-400 mt-1">Selecciona un proyecto para gestionar sus recursos, usuarios y módulos.</p>
         </div>
-        <OrganizationManager onSelect={(org) => setActiveOrg(org)} />
+        <OrganizationManager onSelect={(org) => setActiveOrg(org)} role={role} />
       </div>
     );
   }
