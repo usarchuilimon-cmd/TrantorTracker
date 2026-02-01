@@ -44,6 +44,8 @@ export interface User {
   department: Department;
   avatar?: string;
   organizationId?: string;
+  phone?: string;
+  jobTitle?: string;
 }
 
 export interface SubModule {
@@ -161,4 +163,49 @@ export interface Invitation {
   role: 'CLIENT_USER' | 'ORG_ADMIN' | 'SUPER_ADMIN';
   status: 'PENDING' | 'ACCEPTED';
   createdAt: string;
+}
+
+export enum ProjectStage {
+  PRE_KICKOFF = 'PRE_KICKOFF',
+  IMPLEMENTATION = 'IMPLEMENTATION',
+  UAT = 'UAT',
+  GO_LIVE = 'GO_LIVE',
+  SUPPORT = 'SUPPORT',
+  CHURNED = 'CHURNED'
+}
+
+export enum HealthStatus {
+  ON_TRACK = 'ON_TRACK',
+  AT_RISK = 'AT_RISK',
+  DELAYED = 'DELAYED',
+  CRITICAL = 'CRITICAL'
+}
+
+export interface BrandingConfig {
+  logoUrl?: string;
+  primaryColor?: string;
+  portalTitle?: string;
+}
+
+export interface Organization {
+  id: string;
+  name: string;
+  project_stage?: ProjectStage;
+  health_status?: HealthStatus;
+  start_date?: string;
+  target_go_live?: string;
+  actual_go_live?: string;
+  branding_config?: BrandingConfig;
+  contact_email?: string;
+}
+
+export interface Notification {
+  id: string;
+  user_id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'success' | 'warning' | 'error';
+  is_read: boolean;
+  link?: string;
+  created_at: string;
 }

@@ -23,7 +23,7 @@ export const ModulesView = ({ modules, activeModule, onSelectModule }: ModulesVi
       <div className="space-y-4 md:space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-300">
         <button
           onClick={() => onSelectModule(null)}
-          className="flex items-center space-x-2 text-sm text-gray-500 dark:text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors font-medium"
+          className="flex items-center space-x-2 text-sm text-gray-500 dark:text-slate-400 hover:text-cyan-600 dark:hover:text-cyan-400 transition-colors font-medium"
         >
           <ArrowLeft className="w-4 h-4" />
           <span>Volver al listado</span>
@@ -33,7 +33,7 @@ export const ModulesView = ({ modules, activeModule, onSelectModule }: ModulesVi
         <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-4 sm:p-6 md:p-8 transition-colors">
           <div className="flex flex-col md:flex-row md:items-start justify-between gap-6">
             <div className="flex items-start space-x-4 sm:space-x-5">
-              <div className="p-3 sm:p-4 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 rounded-xl shrink-0">
+              <div className="p-3 sm:p-4 bg-cyan-50 dark:bg-cyan-900/30 text-cyan-600 dark:text-cyan-400 rounded-xl shrink-0">
                 <IconByName name={currentModule.icon} className="w-8 h-8 sm:w-10 sm:h-10" />
               </div>
               <div className="flex-1">
@@ -59,7 +59,7 @@ export const ModulesView = ({ modules, activeModule, onSelectModule }: ModulesVi
                   <div className="hidden sm:block h-8 w-px bg-gray-200 dark:bg-slate-600"></div>
                   <div className="flex flex-col">
                     <span className="text-xs uppercase tracking-wider text-gray-400 dark:text-slate-500 font-semibold">Funcionalidades</span>
-                    <span className="text-gray-900 dark:text-white font-medium mt-1">{currentModule.features.length} Items</span>
+                    <span className="text-gray-900 dark:text-white font-medium mt-1">{currentModule.features.length} Funcionalidades</span>
                   </div>
                 </div>
               </div>
@@ -72,7 +72,7 @@ export const ModulesView = ({ modules, activeModule, onSelectModule }: ModulesVi
               </div>
               <div className="w-full bg-gray-200 dark:bg-slate-600 rounded-full h-2.5">
                 <div
-                  className={`h-2.5 rounded-full ${currentModule.progress === 100 ? 'bg-emerald-500' : 'bg-blue-600 dark:bg-blue-500'}`}
+                  className={`h-2.5 rounded-full ${currentModule.progress === 100 ? 'bg-cyan-500' : 'bg-cyan-600 dark:bg-cyan-500'}`}
                   style={{ width: `${currentModule.progress}%` }}
                 ></div>
               </div>
@@ -89,7 +89,7 @@ export const ModulesView = ({ modules, activeModule, onSelectModule }: ModulesVi
               const isTesting = feature.status === Status.TESTING;
 
               return (
-                <div key={idx} className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-lg border border-gray-100 dark:border-slate-700 shadow-sm flex items-start space-x-3 hover:border-blue-200 dark:hover:border-blue-600 transition-colors">
+                <div key={idx} className="bg-white dark:bg-slate-800 p-4 sm:p-5 rounded-lg border border-gray-100 dark:border-slate-700 shadow-sm flex items-start space-x-3 hover:border-cyan-200 dark:hover:border-cyan-600 transition-colors">
                   <div className={`mt-0.5 shrink-0 ${isCompleted ? 'text-emerald-500' :
                     isTesting ? 'text-amber-500' : 'text-gray-300 dark:text-slate-600'
                     }`}>
@@ -127,19 +127,19 @@ export const ModulesView = ({ modules, activeModule, onSelectModule }: ModulesVi
           <div
             key={module.id}
             onClick={() => onSelectModule(module)}
-            className="group cursor-pointer bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 sm:p-6 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-600 transition-all duration-200 relative overflow-hidden"
+            className="group cursor-pointer bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-5 sm:p-6 hover:shadow-md hover:border-cyan-200 dark:hover:border-cyan-600 transition-all duration-200 relative overflow-hidden"
           >
             {/* Hover Indicator */}
-            <div className="absolute top-0 left-0 w-1 h-full bg-blue-600 dark:bg-blue-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
+            <div className="absolute top-0 left-0 w-1 h-full bg-cyan-600 dark:bg-cyan-500 opacity-0 group-hover:opacity-100 transition-opacity"></div>
 
             <div className="flex justify-between items-start mb-4">
-              <div className="p-3 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 rounded-lg group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-blue-500 transition-colors">
+              <div className="p-3 bg-cyan-50 dark:bg-slate-700 text-cyan-600 dark:text-cyan-400 rounded-lg group-hover:bg-cyan-600 group-hover:text-white dark:group-hover:bg-cyan-500 transition-colors">
                 <IconByName name={module.icon} className="w-6 h-6" />
               </div>
               <StatusBadge status={module.status} />
             </div>
 
-            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors">{module.name}</h3>
+            <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-2 group-hover:text-cyan-600 dark:group-hover:text-cyan-400 transition-colors">{module.name}</h3>
             <p className="text-sm text-gray-600 dark:text-slate-400 mb-4 h-10 line-clamp-2">{module.description}</p>
 
             <div className="border-t border-gray-100 dark:border-slate-700 pt-4 mt-2">
@@ -155,13 +155,13 @@ export const ModulesView = ({ modules, activeModule, onSelectModule }: ModulesVi
                 </div>
                 <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2">
                   <div
-                    className={`h-2 rounded-full transition-all duration-500 ${module.progress === 100 ? 'bg-emerald-500' : 'bg-blue-600 dark:bg-blue-500'}`}
+                    className={`h-2 rounded-full transition-all duration-500 ${module.progress === 100 ? 'bg-cyan-500' : 'bg-cyan-600 dark:bg-cyan-500'}`}
                     style={{ width: `${module.progress}%` }}
                   ></div>
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center text-blue-600 dark:text-blue-400 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
+              <div className="mt-4 flex items-center text-cyan-600 dark:text-cyan-400 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity transform translate-y-2 group-hover:translate-y-0">
                 <Info className="w-3 h-3 mr-1" />
                 Ver detalle funcional
               </div>

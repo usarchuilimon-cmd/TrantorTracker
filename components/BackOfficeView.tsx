@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Module, TimelineEvent, User, Department, Status, SubModule, FaqItem, TutorialItem } from '../types';
+import { Module, TimelineEvent, User, Department, Status, SubModule, FaqItem, TutorialItem, ProjectStage, HealthStatus } from '../types';
 import { Settings, Users, Grid, CalendarDays, Plus, Trash2, Edit2, Save, X, Building, Calendar, CheckCircle, AlertTriangle, BookOpen, HelpCircle, PlayCircle, FileText } from 'lucide-react';
 import { StatusBadge } from './StatusBadge';
 import { IconByName } from './Icons';
+import { PortfolioDashboard } from './PortfolioDashboard';
 
 // ... (keep types and initial interfaces if not changing)
 
@@ -30,48 +31,158 @@ type AdminTab = 'CONFIG' | 'ORGS' | 'MODULES' | 'TIMELINE' | 'USERS' | 'RESOURCE
 // --- Sub-Component: Global Config ---
 const ConfigSection = ({ activeOrgId, currentName, onUpdate }: { activeOrgId: string, currentName: string, onUpdate: (name: string) => void }) => {
   const [name, setName] = useState(currentName);
+  const [stage, setStage] = useState<ProjectStage>(ProjectStage.PRE_KICKOFF);
+  const [health, setHealth] = useState<HealthStatus>(HealthStatus.ON_TRACK);
   const [loading, setLoading] = useState(false);
+  const [branding, setBranding] = useState({ logoUrl: '', primaryColor: '#059669', portalTitle: '' }); // Default emerald-600
 
-  const handleCreate = async () => {
+  // Fetch current config on mount
+  React.useEffect(() => {
+    fetchConfig();
+  }, [activeOrgId]);
+
+  const fetchConfig = async () => {
+    const { data } = await supabase.from('tracker_organizations').select('branding_config, project_stage, health_status').eq('id', activeOrgId).single();
+    if (data) {
+      // @ts-ignore
+      if (data.branding_config) setBranding({ ...branding, ...data.branding_config });
+      if (data.project_stage) setStage(data.project_stage);
+      if (data.health_status) setHealth(data.health_status);
+    }
+  };
+
+  const handleSave = async () => {
     setLoading(true);
-    const { error } = await supabase.from('tracker_organizations').update({ name }).eq('id', activeOrgId);
+    const { error } = await supabase.from('tracker_organizations').update({
+      name,
+      branding_config: branding,
+      project_stage: stage,
+      health_status: health
+    }).eq('id', activeOrgId);
+
     if (error) {
       alert("Error: " + error.message);
     } else {
       onUpdate(name);
-      alert("Nombre actualizado correctamente.");
+      alert("Configuración actualizada correctamente.");
     }
     setLoading(false);
   };
 
   return (
-    <div className="max-w-2xl bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-100 dark:border-slate-700">
-      <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-        <Building className="w-5 h-5" /> Datos del Proyecto
-      </h3>
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nombre del Proyecto / Empresa</label>
-          <div className="flex gap-2">
+    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* General Info */}
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-100 dark:border-slate-700 h-fit">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+          <Building className="w-5 h-5" /> Datos del Proyecto
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Nombre del Proyecto / Empresa</label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-md bg-transparent text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
+              className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-md bg-transparent text-gray-900 dark:text-white focus:ring-2 focus:ring-blue-500"
             />
-            <button
-              onClick={handleCreate}
-              disabled={loading || name === currentName}
-              className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
-            >
-              {loading ? 'Guardando...' : 'Guardar'}
-            </button>
+          </div>
+          <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-700 dark:text-blue-300 flex gap-3">
+            <AlertTriangle className="w-5 h-5 shrink-0" />
+            <p>Este nombre será visible para todos los usuarios del portal.</p>
           </div>
         </div>
-        <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg text-sm text-blue-700 dark:text-blue-300 flex gap-3">
-          <AlertTriangle className="w-5 h-5 shrink-0" />
-          <p>Este cambio actualizará el nombre del proyecto en toda la plataforma.</p>
+      </div>
+
+      {/* Stage & Health Config */}
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-100 dark:border-slate-700 h-fit">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+          <Calendar className="w-5 h-5" /> Etapa y Salud
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Etapa del Proyecto</label>
+            <select
+              value={stage}
+              onChange={(e) => setStage(e.target.value as ProjectStage)}
+              className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-md bg-transparent text-gray-900 dark:text-white"
+            >
+              <option value={ProjectStage.PRE_KICKOFF}>📋 Pre-Lanzamiento</option>
+              <option value={ProjectStage.IMPLEMENTATION}>🚀 Implementación</option>
+              <option value={ProjectStage.UAT}>🧪 Pruebas (UAT)</option>
+              <option value={ProjectStage.GO_LIVE}>🌟 En Vivo (Go-Live)</option>
+              <option value={ProjectStage.SUPPORT}>🛡️ Soporte</option>
+              <option value={ProjectStage.CHURNED}>🚫 Cancelado</option>
+            </select>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Salud del Proyecto</label>
+            <select
+              value={health}
+              onChange={(e) => setHealth(e.target.value as HealthStatus)}
+              className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-md bg-transparent text-gray-900 dark:text-white"
+            >
+              <option value={HealthStatus.ON_TRACK}>✅ A Tiempo</option>
+              <option value={HealthStatus.AT_RISK}>⚠️ En Riesgo</option>
+              <option value={HealthStatus.DELAYED}>⏰ Retrasado</option>
+              <option value={HealthStatus.CRITICAL}>🔥 Crítico</option>
+            </select>
+          </div>
         </div>
+      </div>
+
+      {/* Branding Config */}
+      <div className="bg-white dark:bg-slate-800 p-6 rounded-xl border border-gray-100 dark:border-slate-700">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
+          <Settings className="w-5 h-5" /> Personalización del Portal (Branding)
+        </h3>
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Título del Portal</label>
+            <input
+              type="text"
+              placeholder="ej. Portal Clientes Laimu"
+              value={branding.portalTitle}
+              onChange={(e) => setBranding({ ...branding, portalTitle: e.target.value })}
+              className="w-full p-2 border border-gray-300 dark:border-slate-600 rounded-md bg-transparent text-gray-900 dark:text-white"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Logo URL</label>
+            <div className="flex gap-2">
+              <input
+                type="text"
+                placeholder="https://..."
+                value={branding.logoUrl}
+                onChange={(e) => setBranding({ ...branding, logoUrl: e.target.value })}
+                className="flex-1 p-2 border border-gray-300 dark:border-slate-600 rounded-md bg-transparent text-gray-900 dark:text-white"
+              />
+              {branding.logoUrl && <img src={branding.logoUrl} alt="Preview" className="w-10 h-10 object-contain bg-white rounded border" />}
+            </div>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-slate-300 mb-1">Color Primario</label>
+            <div className="flex gap-2 items-center">
+              <input
+                type="color"
+                value={branding.primaryColor}
+                onChange={(e) => setBranding({ ...branding, primaryColor: e.target.value })}
+                className="w-12 h-10 p-1 border rounded cursor-pointer"
+              />
+              <span className="text-sm font-mono text-gray-500">{branding.primaryColor}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="md:col-span-2 flex justify-end">
+        <button
+          onClick={handleSave}
+          disabled={loading}
+          className="bg-cyan-600 text-white px-6 py-2 rounded-lg hover:bg-cyan-700 disabled:opacity-50 flex items-center gap-2 font-medium"
+        >
+          <Save className="w-4 h-4" />
+          {loading ? 'Guardando...' : 'Guardar Configuración Completa'}
+        </button>
       </div>
     </div>
   );
@@ -345,12 +456,12 @@ const ModulesManager = ({ modules, setModules, activeOrgId }: { modules: Module[
                 </div>
               ))}
             </div>
-            <button onClick={addFeature} className="text-xs flex items-center gap-1 text-blue-600 font-medium hover:underline"><Plus className="w-3 h-3" /> Agregar Funcionalidad</button>
+            <button onClick={addFeature} className="text-xs flex items-center gap-1 text-cyan-600 font-medium hover:underline"><Plus className="w-3 h-3" /> Agregar Funcionalidad</button>
           </div>
 
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => { setEditingId(null); setEditForm(null); }} className="px-4 py-2 text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg">Cancelar</button>
-            <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2">
+            <button onClick={handleSave} disabled={isSaving} className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 flex items-center gap-2">
               {isSaving ? <span className="animate-spin">⌛</span> : <Save className="w-4 h-4" />}
               Guardar Cambios
             </button>
@@ -366,7 +477,7 @@ const ModulesManager = ({ modules, setModules, activeOrgId }: { modules: Module[
                   <h4 className="font-bold text-gray-900 dark:text-white">{mod.name}</h4>
                 </div>
                 <div className="flex gap-1">
-                  <button onClick={() => handleEdit(mod)} className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-md"><Edit2 className="w-4 h-4" /></button>
+                  <button onClick={() => handleEdit(mod)} className="p-1.5 text-cyan-600 hover:bg-cyan-50 rounded-md"><Edit2 className="w-4 h-4" /></button>
                   <button onClick={() => handleDelete(mod.id)} className="p-1.5 text-red-600 hover:bg-red-50 rounded-md"><Trash2 className="w-4 h-4" /></button>
                 </div>
               </div>
@@ -508,7 +619,7 @@ const TimelineManager = ({ timeline, setTimeline, activeOrgId, modules }: { time
                               : current.filter(n => n !== mod.name);
                             setEditForm({ ...editForm, modulesIncluded: updated });
                           }}
-                          className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+                          className="rounded border-gray-300 text-cyan-600 focus:ring-cyan-500"
                         />
                         <span className="text-sm text-gray-700 dark:text-slate-200 truncate">{mod.name}</span>
                       </label>
@@ -522,7 +633,7 @@ const TimelineManager = ({ timeline, setTimeline, activeOrgId, modules }: { time
           </div>
           <div className="flex justify-end gap-3 mt-6">
             <button onClick={() => { setEditingId(null); setEditForm(null); }} className="px-4 py-2 text-gray-600 dark:text-slate-300 hover:bg-gray-100 rounded-lg">Cancelar</button>
-            <button onClick={handleSave} className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center gap-2"><Save className="w-4 h-4" /> Guardar Cambios</button>
+            <button onClick={handleSave} className="px-4 py-2 bg-cyan-600 text-white rounded-lg hover:bg-cyan-700 flex items-center gap-2"><Save className="w-4 h-4" /> Guardar Cambios</button>
           </div>
         </div>
       ) : (
@@ -537,7 +648,7 @@ const TimelineManager = ({ timeline, setTimeline, activeOrgId, modules }: { time
                 </div>
               </div>
               <div className="flex gap-2">
-                <button onClick={() => handleEdit(evt)} className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
+                <button onClick={() => handleEdit(evt)} className="p-2 text-cyan-600 hover:bg-cyan-50 rounded-lg"><Edit2 className="w-4 h-4" /></button>
                 <button onClick={() => handleDelete(evt.id)} className="p-2 text-red-600 hover:bg-red-50 rounded-lg"><Trash2 className="w-4 h-4" /></button>
               </div>
             </div>
@@ -618,13 +729,13 @@ const UsersManager = ({ users, setUsers, activeOrgId }: { users: User[], setUser
         <div className="flex gap-4">
           <button
             onClick={() => setActiveTab('USERS')}
-            className={`pb-2 font-medium ${activeTab === 'USERS' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
+            className={`pb-2 font-medium ${activeTab === 'USERS' ? 'text-cyan-600 border-b-2 border-cyan-600' : 'text-gray-500'}`}
           >
             Usuarios Activos ({orgUsers.length})
           </button>
           <button
             onClick={() => setActiveTab('INVITES')}
-            className={`pb-2 font-medium ${activeTab === 'INVITES' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500'}`}
+            className={`pb-2 font-medium ${activeTab === 'INVITES' ? 'text-cyan-600 border-b-2 border-cyan-600' : 'text-gray-500'}`}
           >
             Invitaciones Pendientes
           </button>
@@ -848,13 +959,13 @@ const ResourcesManager = ({
       <div className="flex gap-4 border-b border-gray-200 dark:border-slate-700 pb-2">
         <button
           onClick={() => setSection('FAQ')}
-          className={`pb-2 text-sm font-medium transition-colors ${section === 'FAQ' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700 dark:text-slate-400'}`}
+          className={`pb-2 text-sm font-medium transition-colors ${section === 'FAQ' ? 'text-cyan-600 border-b-2 border-cyan-600' : 'text-gray-500 hover:text-gray-700 dark:text-slate-400'}`}
         >
           Preguntas Frecuentes
         </button>
         <button
           onClick={() => setSection('TUTORIAL')}
-          className={`pb-2 text-sm font-medium transition-colors ${section === 'TUTORIAL' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-gray-500 hover:text-gray-700 dark:text-slate-400'}`}
+          className={`pb-2 text-sm font-medium transition-colors ${section === 'TUTORIAL' ? 'text-cyan-600 border-b-2 border-cyan-600' : 'text-gray-500 hover:text-gray-700 dark:text-slate-400'}`}
         >
           Tutoriales y Guías
         </button>
@@ -966,6 +1077,10 @@ export const BackOfficeView = ({
 
   // If no org selected, show ONLY Organization List
   if (!activeOrg) {
+    if (role === 'SUPER_ADMIN') {
+      return <PortfolioDashboard onSelectOrg={(org) => setActiveOrg(org)} />;
+    }
+
     return (
       <div className="space-y-6">
         <div className="bg-slate-900 text-white p-6 rounded-xl shadow-lg">

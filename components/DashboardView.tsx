@@ -56,7 +56,7 @@ export const DashboardView = ({ modules, timeline, actions, onNavigate, onModule
                      </span>
                   </div>
                   <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2 mt-4">
-                     <div className="bg-gradient-to-r from-blue-600 to-cyan-500 h-2 rounded-full shadow-sm" style={{ width: `${overallProgress}%` }}></div>
+                     <div className="bg-gradient-to-r from-cyan-600 to-teal-500 h-2 rounded-full shadow-sm" style={{ width: `${overallProgress}%` }}></div>
                   </div>
                </div>
                <div className="absolute right-0 top-0 p-4 opacity-5">
@@ -92,7 +92,7 @@ export const DashboardView = ({ modules, timeline, actions, onNavigate, onModule
             {/* Pending Actions */}
             <div
                onClick={() => onNavigate(Tab.ACTIONS)}
-               className="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors cursor-pointer group hover:border-blue-300 dark:hover:border-blue-600"
+               className="bg-white dark:bg-slate-800 p-5 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 transition-colors cursor-pointer group hover:border-cyan-300 dark:hover:border-cyan-600"
             >
                <div className="flex justify-between items-start mb-2">
                   <h3 className="text-gray-500 dark:text-slate-400 text-xs font-bold uppercase tracking-wider">Acciones</h3>
@@ -164,11 +164,11 @@ export const DashboardView = ({ modules, timeline, actions, onNavigate, onModule
                               onModuleSelect(module);
                               onNavigate(Tab.MODULES);
                            }}
-                           className="group bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl p-4 hover:shadow-md hover:border-blue-200 dark:hover:border-blue-600 transition-all cursor-pointer"
+                           className="group bg-white dark:bg-slate-800 border border-gray-100 dark:border-slate-700 rounded-xl p-4 hover:shadow-md hover:border-cyan-200 dark:hover:border-cyan-600 transition-all cursor-pointer"
                         >
                            <div className="flex justify-between items-start mb-3">
                               <div className="flex items-center gap-3">
-                                 <div className="p-2.5 bg-blue-50 dark:bg-slate-700 text-blue-600 dark:text-blue-400 rounded-lg group-hover:scale-105 transition-transform">
+                                 <div className="p-2.5 bg-cyan-50 dark:bg-slate-700 text-cyan-600 dark:text-cyan-400 rounded-lg group-hover:scale-105 transition-transform">
                                     <IconByName name={module.icon} className="w-5 h-5" />
                                  </div>
                                  <div>
@@ -188,7 +188,7 @@ export const DashboardView = ({ modules, timeline, actions, onNavigate, onModule
                               </div>
                               <div className="w-full bg-gray-100 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
                                  <div
-                                    className={`h-full rounded-full transition-all duration-500 ${module.progress === 100 ? 'bg-emerald-500' : 'bg-blue-600'}`}
+                                    className={`h-full rounded-full transition-all duration-500 ${module.progress === 100 ? 'bg-cyan-500' : 'bg-cyan-600'}`}
                                     style={{ width: `${module.progress}%` }}
                                  ></div>
                               </div>

@@ -42,7 +42,7 @@ export const ActionsView = ({ actions, onToggle, onAdd, onDelete }: ActionsViewP
    return (
       <div className="space-y-6">
          {/* Header */}
-         <div className="bg-gradient-to-r from-blue-600 to-indigo-600 dark:from-blue-900 dark:to-indigo-900 rounded-xl p-6 sm:p-8 text-white shadow-lg">
+         <div className="bg-gradient-to-r from-cyan-600 to-teal-600 dark:from-cyan-900 dark:to-teal-900 rounded-xl p-6 sm:p-8 text-white shadow-lg">
             <div className="flex items-start space-x-4">
                <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm shrink-0">
                   <ListTodo className="w-8 h-8 text-blue-50" />
@@ -154,7 +154,7 @@ export const ActionsView = ({ actions, onToggle, onAdd, onDelete }: ActionsViewP
                <div className="lg:col-span-1">
                   <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-gray-100 dark:border-slate-700 p-6 sticky top-24">
                      <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-                        <Plus className="w-5 h-5 text-blue-600" /> Nueva Acción
+                        <Plus className="w-5 h-5 text-cyan-600" /> Nueva Acción
                      </h3>
                      <form onSubmit={handleAdd} className="space-y-4">
                         <div>
@@ -199,7 +199,7 @@ export const ActionsView = ({ actions, onToggle, onAdd, onDelete }: ActionsViewP
                               id="isCritical"
                               checked={newAction.isCritical}
                               onChange={e => setNewAction({ ...newAction, isCritical: e.target.checked })}
-                              className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 border-gray-300 dark:border-slate-600"
+                              className="w-4 h-4 rounded text-cyan-600 focus:ring-cyan-500 border-gray-300 dark:border-slate-600"
                            />
                            <label htmlFor="isCritical" className="text-sm text-gray-700 dark:text-slate-300 select-none font-medium">
                               Marcar como Crítica
@@ -208,7 +208,7 @@ export const ActionsView = ({ actions, onToggle, onAdd, onDelete }: ActionsViewP
 
                         <button
                            type="submit"
-                           className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                           className="w-full mt-4 bg-cyan-600 hover:bg-cyan-700 text-white font-medium py-3 rounded-lg shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2"
                         >
                            <Plus className="w-5 h-5" /> Registrar Tarea
                         </button>

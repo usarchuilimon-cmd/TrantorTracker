@@ -1,7 +1,9 @@
 
 import { Status, Department, Module, CustomDevelopment, TimelineEvent, ActionItem, Ticket, TicketPriority, TicketStatus, FaqItem, TutorialItem } from './types';
 
-export const COMPANY_NAME = "OMEGA";
+export const COMPANY_NAME = "Laimu";
+export const COMPANY_LOGO = "/laimu-logo.png";
+
 export const PROJECT_START_DATE = "06 Enero 2025";
 export const GO_LIVE_DATE = "25 Julio 2025";
 
@@ -237,86 +239,86 @@ export const CUSTOM_DEVS: CustomDevelopment[] = [
 ];
 
 export const TIMELINE: TimelineEvent[] = [
-  { 
-    id: 't0', 
-    phase: 'Fase 0: Arranque y Planeación', 
-    date: '06 Ene - 17 Ene', 
-    status: Status.COMPLETED, 
+  {
+    id: 't0',
+    phase: 'Fase 0: Arranque y Planeación',
+    date: '06 Ene - 17 Ene',
+    status: Status.COMPLETED,
     description: 'Definición de alcances, infraestructura TI y equipo de proyecto.',
     modulesIncluded: ['Sistemas', 'Infraestructura'],
     tasks: [
-        { id: 't0-1', title: 'Kick-off del Proyecto', status: Status.COMPLETED, week: 'Semana 1' },
-        { id: 't0-2', title: 'Habilitación de Servidores y Accesos', status: Status.COMPLETED, week: 'Semana 1' },
-        { id: 't0-3', title: 'Instalación de Base de Datos', status: Status.COMPLETED, week: 'Semana 2' }
+      { id: 't0-1', title: 'Kick-off del Proyecto', status: Status.COMPLETED, week: 'Semana 1' },
+      { id: 't0-2', title: 'Habilitación de Servidores y Accesos', status: Status.COMPLETED, week: 'Semana 1' },
+      { id: 't0-3', title: 'Instalación de Base de Datos', status: Status.COMPLETED, week: 'Semana 2' }
     ]
   },
-  { 
-    id: 't1', 
-    phase: 'Fase 1: Abastecimiento', 
-    date: '20 Ene - 28 Feb', 
-    status: Status.COMPLETED, 
+  {
+    id: 't1',
+    phase: 'Fase 1: Abastecimiento',
+    date: '20 Ene - 28 Feb',
+    status: Status.COMPLETED,
     description: 'Gestión de cadena de suministro: Compras e Inventarios.',
     modulesIncluded: ['Compras', 'Almacén'],
     tasks: [
-        { id: 't1-1', title: 'Carga de Proveedores y Artículos', status: Status.COMPLETED, week: 'Semana 3' },
-        { id: 't1-2', title: 'Configuración de Requisiciones', status: Status.COMPLETED, week: 'Semana 4' },
-        { id: 't1-3', title: 'Capacitación Almacenes', status: Status.COMPLETED, week: 'Semana 5' },
-        { id: 't1-4', title: 'Pruebas Integrales Fase 1', status: Status.COMPLETED, week: 'Semana 8' }
+      { id: 't1-1', title: 'Carga de Proveedores y Artículos', status: Status.COMPLETED, week: 'Semana 3' },
+      { id: 't1-2', title: 'Configuración de Requisiciones', status: Status.COMPLETED, week: 'Semana 4' },
+      { id: 't1-3', title: 'Capacitación Almacenes', status: Status.COMPLETED, week: 'Semana 5' },
+      { id: 't1-4', title: 'Pruebas Integrales Fase 1', status: Status.COMPLETED, week: 'Semana 8' }
     ]
   },
-  { 
-    id: 't2', 
-    phase: 'Fase 2: Comercial y Logística', 
-    date: '03 Mar - 04 Abr', 
-    status: Status.IN_PROGRESS, 
+  {
+    id: 't2',
+    phase: 'Fase 2: Comercial y Logística',
+    date: '03 Mar - 04 Abr',
+    status: Status.IN_PROGRESS,
     description: 'Ventas, Facturación 4.0, Finanzas y distribución.',
     modulesIncluded: ['Ventas', 'Finanzas', 'Logística'],
     tasks: [
-        { id: 't2-1', title: 'Listas de Precio y Clientes', status: Status.COMPLETED, week: 'Semana 9' },
-        { id: 't2-2', title: 'Configuración de Facturación 4.0', status: Status.COMPLETED, week: 'Semana 10' },
-        { id: 't2-3', title: 'Definición de Rutas Logísticas', status: Status.IN_PROGRESS, week: 'Semana 11' },
-        { id: 't2-4', title: 'Capacitación Ventas y Cobranza', status: Status.PENDING, week: 'Semana 12' },
-        { id: 't2-5', title: 'Pruebas Fase 2', status: Status.PENDING, week: 'Semana 13' }
+      { id: 't2-1', title: 'Listas de Precio y Clientes', status: Status.COMPLETED, week: 'Semana 9' },
+      { id: 't2-2', title: 'Configuración de Facturación 4.0', status: Status.COMPLETED, week: 'Semana 10' },
+      { id: 't2-3', title: 'Definición de Rutas Logísticas', status: Status.IN_PROGRESS, week: 'Semana 11' },
+      { id: 't2-4', title: 'Capacitación Ventas y Cobranza', status: Status.PENDING, week: 'Semana 12' },
+      { id: 't2-5', title: 'Pruebas Fase 2', status: Status.PENDING, week: 'Semana 13' }
     ]
   },
-  { 
-    id: 't3', 
-    phase: 'Fase 3: Manufactura Core', 
-    date: '07 Abr - 23 May', 
-    status: Status.PENDING, 
+  {
+    id: 't3',
+    phase: 'Fase 3: Manufactura Core',
+    date: '07 Abr - 23 May',
+    status: Status.PENDING,
     description: 'Planeación, Producción, Calidad y Mantenimiento.',
     modulesIncluded: ['Producción', 'Planeación de la Producción', 'Calidad', 'Mantenimiento'],
     tasks: [
-        { id: 't3-1', title: 'Ingeniería de Producto (BOMs)', status: Status.IN_PROGRESS, week: 'Semana 14' },
-        { id: 't3-2', title: 'Plan Maestro (MPS)', status: Status.PENDING, week: 'Semana 16' },
-        { id: 't3-3', title: 'Gestión de Activos (Mantenimiento)', status: Status.PENDING, week: 'Semana 18' },
-        { id: 't3-4', title: 'Planes de Calidad', status: Status.PENDING, week: 'Semana 19' }
+      { id: 't3-1', title: 'Ingeniería de Producto (BOMs)', status: Status.IN_PROGRESS, week: 'Semana 14' },
+      { id: 't3-2', title: 'Plan Maestro (MPS)', status: Status.PENDING, week: 'Semana 16' },
+      { id: 't3-3', title: 'Gestión de Activos (Mantenimiento)', status: Status.PENDING, week: 'Semana 18' },
+      { id: 't3-4', title: 'Planes de Calidad', status: Status.PENDING, week: 'Semana 19' }
     ]
   },
-  { 
-    id: 't4', 
-    phase: 'Fase 4: Gestión y Estrategia', 
-    date: '26 May - 27 Jun', 
-    status: Status.PENDING, 
+  {
+    id: 't4',
+    phase: 'Fase 4: Gestión y Estrategia',
+    date: '26 May - 27 Jun',
+    status: Status.PENDING,
     description: 'Recursos Humanos, Seguridad y Planeación Estratégica.',
     modulesIncluded: ['Recursos Humanos', 'Seguridad', 'Planeación Estratégica'],
     tasks: [
-        { id: 't4-1', title: 'Carga de Nómina y Empleados', status: Status.PENDING, week: 'Semana 21' },
-        { id: 't4-2', title: 'Configuración de Seguridad', status: Status.PENDING, week: 'Semana 23' },
-        { id: 't4-3', title: 'Tableros de Control (BI)', status: Status.PENDING, week: 'Semana 25' }
+      { id: 't4-1', title: 'Carga de Nómina y Empleados', status: Status.PENDING, week: 'Semana 21' },
+      { id: 't4-2', title: 'Configuración de Seguridad', status: Status.PENDING, week: 'Semana 23' },
+      { id: 't4-3', title: 'Tableros de Control (BI)', status: Status.PENDING, week: 'Semana 25' }
     ]
   },
-  { 
-    id: 't5', 
-    phase: 'Cierre y Go-Live', 
-    date: '30 Jun - 25 Jul', 
-    status: Status.PENDING, 
+  {
+    id: 't5',
+    phase: 'Cierre y Go-Live',
+    date: '30 Jun - 25 Jul',
+    status: Status.PENDING,
     description: 'Preparación final, saldos iniciales y arranque.',
     modulesIncluded: ['Sistemas', 'Todos'],
     tasks: [
-        { id: 't5-1', title: 'Capacitación Final Usuarios', status: Status.PENDING, week: 'Semana 26' },
-        { id: 't5-2', title: 'Carga de Saldos Iniciales', status: Status.PENDING, week: 'Semana 27' },
-        { id: 't5-3', title: 'Go-Live (Arranque)', status: Status.PENDING, week: 'Semana 29' }
+      { id: 't5-1', title: 'Capacitación Final Usuarios', status: Status.PENDING, week: 'Semana 26' },
+      { id: 't5-2', title: 'Carga de Saldos Iniciales', status: Status.PENDING, week: 'Semana 27' },
+      { id: 't5-3', title: 'Go-Live (Arranque)', status: Status.PENDING, week: 'Semana 29' }
     ]
   }
 ];

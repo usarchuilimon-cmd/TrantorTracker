@@ -21,6 +21,7 @@ import {
   Minimize
 } from 'lucide-react';
 import { DashboardView } from './components/DashboardView';
+import { ClientPortalView } from './components/ClientPortalView';
 import { ModulesView } from './components/ModulesView';
 import { CustomDevsView } from './components/CustomDevsView';
 import { TimelineView } from './components/TimelineView';
@@ -30,6 +31,7 @@ import { BackOfficeView } from './components/BackOfficeView';
 import { FaqView } from './components/FaqView';
 import {
   COMPANY_NAME as DEFAULT_COMPANY,
+  COMPANY_LOGO as DEFAULT_LOGO,
   PENDING_ACTIONS,
   MODULES as DEFAULT_MODULES,
   TIMELINE as DEFAULT_TIMELINE,
@@ -37,7 +39,7 @@ import {
   FAQS as DEFAULT_FAQS,
   TUTORIALS as DEFAULT_TUTORIALS
 } from './constants';
-import { Tab, ActionItem, Module, TimelineEvent, CustomDevelopment, User, Department, FaqItem, TutorialItem, Ticket } from './types';
+import { Tab, ActionItem, Module, TimelineEvent, CustomDevelopment, User, Department, FaqItem, TutorialItem, Ticket, Notification } from './types';
 import { supabase } from './lib/supabase';
 import { mapModule, mapTimelineEvent, mapCustomDev, mapActionItem, mapFaq, mapTutorial, mapUser, mapTicket } from './lib/mappers';
 import { Session } from '@supabase/supabase-js';
@@ -61,12 +63,27 @@ function App() {
   const [tutorials, setTutorials] = useState<TutorialItem[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [tickets, setTickets] = useState<Ticket[]>([]); // Added tickets state
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
   const [selectedModule, setSelectedModule] = useState<Module | null>(null); // State to control module detail view
   const [isLoading, setIsLoading] = useState(true);
 
   // Auth State
   // Auth State from Context
   const { user, profile, organization, loading, signOut, isAdmin, isClient } = useAuth();
+
+  // Branding Logic
+  const branding = (organization as any)?.branding_config || {};
+  const themeColor = branding.primaryColor || '#0891b2'; // Default Laimu Cyan
+  const logoUrl = branding.logoUrl || DEFAULT_LOGO;
+  const portalTitle = branding.portalTitle || organization?.name || DEFAULT_COMPANY;
+
+  // Apply Theme Color
+  useEffect(() => {
+    if (branding.primaryColor) {
+      document.documentElement.style.setProperty('--primary-color', branding.primaryColor);
+    }
+  }, [branding.primaryColor]);
 
 
   // Auth & Data Fetching
@@ -160,6 +177,16 @@ function App() {
           .select('*');
         if (profilesError) throw profilesError;
 
+        // Fetch Notifications
+        const { data: notifData, error: notifError } = await supabase
+          .from('tracker_notifications')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        // Don't throw on notif error, just log (table might not exist yet if migration failed or delayed)
+        if (notifData) setNotifications(notifData as Notification[]);
+        if (notifError) console.error('Error fetching notifications (table might be missing):', notifError);
+
         // Map profiles to User
         if (profilesData) {
           const mappedUsers: User[] = profilesData.map((p: any) => ({
@@ -250,14 +277,45 @@ function App() {
     setActions(actions.filter(a => a.id !== id));
   };
 
+  const markAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('tracker_notifications')
+        .update({ is_read: true })
+        .eq('id', id);
+
+      if (!error) {
+        setNotifications(notifications.map(n => n.id === id ? { ...n, is_read: true } : n));
+      }
+    } catch (e) {
+      console.error('Error marking notification as read', e);
+    }
+  };
+
+  const deleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from('tracker_notifications')
+        .delete()
+        .eq('id', id);
+
+      if (!error) {
+        setNotifications(notifications.filter(n => n.id !== id));
+      }
+    } catch (e) {
+      console.error('Error deleting notification', e);
+    }
+  };
+
   // If no session, show Login
   // If no user and not loading (loading handled by AuthContext mostly but we check user), show Login
   // Actually, AuthContext loading covers initial fetch.
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 text-emerald-600">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 text-cyan-600">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-sm font-medium text-gray-500 dark:text-slate-400">Cargando...</p>
         </div>
       </div>
@@ -272,9 +330,9 @@ function App() {
   // Loading State from data fetch
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 text-emerald-600">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 dark:bg-slate-900 text-cyan-600">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-8 h-8 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+          <div className="w-8 h-8 border-4 border-cyan-600 border-t-transparent rounded-full animate-spin"></div>
           <p className="text-sm font-medium text-gray-500 dark:text-slate-400">Cargando datos...</p>
         </div>
       </div>
@@ -289,7 +347,7 @@ function App() {
       }}
       className={`relative flex items-center ${isCollapsed ? 'justify-center px-2' : 'px-4 space-x-3'} py-3 rounded-lg transition-all duration-200 group
         ${activeTab === tab
-          ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+          ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-600/20'
           : 'text-gray-600 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-800 hover:text-gray-900 dark:hover:text-white'
         }
       `}
@@ -307,9 +365,9 @@ function App() {
     </button>
   );
 
+
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-slate-900 flex transition-colors duration-300">
-
       {/* Sidebar (Desktop) */}
       <aside
         className={`hidden lg:flex flex-col bg-white dark:bg-slate-950 text-gray-900 dark:text-white fixed h-full z-20 transition-all duration-300 border-r border-gray-200 dark:border-slate-800
@@ -321,16 +379,28 @@ function App() {
             <div className="flex items-center space-x-3">
               <div className="h-10 w-auto flex items-center justify-center">
                 <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center font-bold text-white shadow-lg shadow-blue-500/30">
-                    T
-                  </div>
-                  <span className="font-bold text-xl tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600 dark:from-white dark:to-slate-400">TRANTOR</span>
+                  {logoUrl ? (
+                    <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
+                  ) : (
+                    <div
+                      className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shadow-lg"
+                      style={{ backgroundColor: themeColor }}
+                    >
+                      {organization?.name?.[0] || 'T'}
+                    </div>
+                  )}
+                  <span className="font-bold text-lg tracking-tight truncate max-w-[150px]" title={portalTitle}>
+                    {portalTitle}
+                  </span>
                 </div>
               </div>
             </div>
           ) : (
-            <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-cyan-400 rounded-lg flex items-center justify-center font-bold text-white shadow-lg">
-              T
+            <div
+              className="w-10 h-10 rounded-lg flex items-center justify-center font-bold text-white shadow-lg"
+              style={{ backgroundColor: themeColor }}
+            >
+              {organization?.name?.[0] || 'T'}
             </div>
           )}
 
@@ -346,9 +416,13 @@ function App() {
           {profile?.role !== 'SUPER_ADMIN' && (
             <>
               <NavItem tab={Tab.DASHBOARD} label="Resumen General" icon={LayoutDashboard} />
-              <NavItem tab={Tab.MODULES} label="Módulos ERP" icon={Grid} />
+              {/* Simplified Access for Clients? For now keeping all modules but we could filtering */}
+              {!isClient && <NavItem tab={Tab.MODULES} label="Módulos ERP" icon={Grid} />}
               <NavItem tab={Tab.TIMELINE} label="Cronograma" icon={CalendarDays} />
-              <NavItem tab={Tab.CUSTOM_DEVS} label="Desarrollos" icon={Code2} />
+
+              {/* Clients might not need to see technical "Custom Devs" details unless specified */}
+              {!isClient && <NavItem tab={Tab.CUSTOM_DEVS} label="Desarrollos" icon={Code2} />}
+
               <NavItem tab={Tab.ACTIONS} label="Acciones" icon={ListTodo} />
               <NavItem tab={Tab.FAQ} label="Ayuda & Tutoriales" icon={BookOpen} />
               <NavItem tab={Tab.TICKETS} label="Soporte & Tickets" icon={LifeBuoy} />
@@ -404,8 +478,17 @@ function App() {
       <div className={`fixed inset-y-0 left-0 w-64 bg-white dark:bg-slate-950 text-gray-900 dark:text-white transform transition-transform duration-300 ease-in-out z-50 lg:hidden ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} shadow-2xl border-r border-gray-200 dark:border-slate-800`}>
         <div className="p-6 flex justify-between items-center border-b border-gray-200 dark:border-slate-800">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center font-bold text-white">T</div>
-            <span className="font-bold text-lg">TRANTOR</span>
+            {logoUrl ? (
+              <img src={logoUrl} alt="Logo" className="w-8 h-8 object-contain" />
+            ) : (
+              <div
+                className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-white shadow-lg"
+                style={{ backgroundColor: themeColor }}
+              >
+                {organization?.name?.[0] || 'T'}
+              </div>
+            )}
+            <span className="font-bold text-lg">{portalTitle}</span>
           </div>
           <button onClick={() => setIsMobileMenuOpen(false)}>
             <X className="w-6 h-6 text-gray-500 dark:text-gray-400" />
@@ -472,17 +555,78 @@ function App() {
               {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
             </button>
 
-            <button className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full relative transition-colors">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
-            </button>
+            <div className="relative">
+              <button
+                className="p-2 text-gray-500 dark:text-slate-400 hover:bg-gray-100 dark:hover:bg-slate-700 rounded-full relative transition-colors"
+                onClick={() => setIsNotificationsOpen(!isNotificationsOpen)}
+              >
+                <Bell className="w-5 h-5" />
+                {notifications.some(n => !n.is_read) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-800"></span>
+                )}
+              </button>
+
+              {isNotificationsOpen && (
+                <>
+                  <div
+                    className="fixed inset-0 z-40"
+                    onClick={() => setIsNotificationsOpen(false)}
+                  ></div>
+                  <div className="absolute right-0 mt-2 w-80 bg-white dark:bg-slate-900 rounded-xl shadow-xl border border-gray-200 dark:border-slate-700 overflow-hidden z-50 animate-in fade-in zoom-in-95 duration-200">
+                    <div className="p-3 border-b border-gray-200 dark:border-slate-800 flex justify-between items-center">
+                      <h3 className="font-semibold text-sm text-gray-900 dark:text-white">Notificaciones</h3>
+                      {notifications.length > 0 && (
+                        <span className="text-xs text-cyan-600 dark:text-cyan-400 font-medium cursor-pointer" onClick={() => setNotifications([]) /* Implement 'mark all read' properly ideally */}>
+                          Limpiar todo
+                        </span>
+                      )}
+                    </div>
+                    <div className="max-h-80 overflow-y-auto">
+                      {notifications.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400">
+                          <Bell className="w-8 h-8 mx-auto mb-2 opacity-20" />
+                          <p className="text-sm">No tienes notificaciones</p>
+                        </div>
+                      ) : (
+                        notifications.map(notif => (
+                          <div
+                            key={notif.id}
+                            onClick={() => markAsRead(notif.id)}
+                            className={`p-3 border-b border-gray-100 dark:border-slate-800 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors cursor-pointer group ${!notif.is_read ? 'bg-cyan-50/50 dark:bg-cyan-900/10' : ''}`}
+                          >
+                            <div className="flex gap-3">
+                              <div className={`mt-1 w-2 h-2 rounded-full shrink-0 ${!notif.is_read ? 'bg-cyan-500' : 'bg-transparent'}`}></div>
+                              <div className="flex-1">
+                                <h4 className={`text-sm ${!notif.is_read ? 'font-semibold text-gray-900 dark:text-white' : 'font-medium text-gray-600 dark:text-slate-300'}`}>
+                                  {notif.title}
+                                </h4>
+                                <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5 line-clamp-2">{notif.message}</p>
+                                <div className="flex justify-between items-center mt-2">
+                                  <span className="text-[10px] text-gray-400">{new Date(notif.created_at).toLocaleDateString()}</span>
+                                  <button
+                                    onClick={(e) => deleteNotification(notif.id, e)}
+                                    className="opacity-0 group-hover:opacity-100 p-1 hover:bg-gray-200 dark:hover:bg-slate-700 rounded transition-all text-gray-400 hover:text-red-500"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
 
             <div className="flex items-center space-x-3 pl-1 sm:pl-2">
               <div className="text-right hidden sm:block">
                 <p className="text-sm font-medium text-gray-900 dark:text-white">{profile?.full_name || user?.email}</p>
                 <p className="text-xs text-gray-500 dark:text-slate-400">{profile?.role || 'User'}</p>
               </div>
-              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md ring-2 ring-white dark:ring-slate-700">
+              <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-r from-cyan-600 to-teal-600 rounded-full flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-md ring-2 ring-white dark:ring-slate-700">
                 {(profile?.full_name?.[0] || user?.email?.[0] || 'U').toUpperCase()}
               </div>
             </div>
